@@ -1,37 +1,46 @@
 # File: app.py
-# Backend Flask dengan logika konteks yang lebih andal dan sapaan dinamis.
+# Versi dengan perbaikan path file untuk deployment
 
+import json
+import os # <-- TAMBAHKAN IMPORT INI
+from flask import Flask, request, jsonify
 from flask_cors import CORS
 from fuzzywuzzy import process
 from datetime import datetime
 
 app = Flask(__name__)
 
-# ▼▼▼ GANTI BAGIAN INI ▼▼▼
-# Ganti URL di bawah ini dengan URL Vercel Anda yang sebenarnya
+# --- PERBAIKAN CORS (Pastikan URL Vercel Anda sudah benar) ---
 origins = [
-    "http://localhost:5173",  # Untuk development di komputer lokal
-    "https://portal-pelayanan-konflik-satwa.vercel.app"  # GANTI DENGAN URL VERCEL ANDA
+    "http://localhost:5173",
+    "https://pelayanan-konflik-satwa.vercel.app/" # <-- GANTI DENGAN URL VERCEL ANDA
 ]
 CORS(app, origins=origins)
 
-# --- MEMUAT KNOWLEDGE BASE ---
+
+# --- PERBAIKAN PATH FILE KNOWLEDGE BASE ---
 def load_knowledge_base():
     try:
-        with open('knowledge_base.json', 'r', encoding='utf-8') as f:
+        # Membuat path absolut ke file knowledge_base.json
+        # Ini memastikan file selalu ditemukan, tidak peduli dari mana script dijalankan
+        script_dir = os.path.dirname(__file__) # <-- Direktori tempat app.py berada
+        file_path = os.path.join(script_dir, 'knowledge_base.json') # <-- Gabungkan dengan nama file
+        print(f"Mencoba memuat knowledge base dari: {file_path}") # <-- Log untuk debugging
+
+        with open(file_path, 'r', encoding='utf-8') as f:
             return json.load(f)
     except Exception as e:
-        print(f"Error memuat knowledge_base.json: {e}")
+        print(f"Error fatal saat memuat knowledge_base.json: {e}")
         return {}
+# ---------------------------------------------
+
 
 knowledge_base = load_knowledge_base()
 
-# --- MANAJEMEN KONTEKS ---
+# --- Sisa kode Anda tetap sama ---
 user_context = {"topic": None}
 
-# --- FUNGSI BARU UNTUK SAPAAN DINAMIS ---
 def get_dynamic_greeting():
-    """Membuat sapaan berdasarkan waktu saat ini."""
     current_hour = datetime.now().hour
     if 5 <= current_hour < 12:
         return "Selamat Pagi!"
@@ -42,11 +51,9 @@ def get_dynamic_greeting():
     else:
         return "Selamat Malam!"
 
-# --- FUNGSI UTAMA YANG DIPERBARUI ---
 def get_bot_response(user_input):
     text = user_input.lower().strip()
     
-    # Langkah 1: Prioritaskan pencarian berdasarkan konteks saat ini.
     if user_context.get("topic"):
         for key, value in knowledge_base.items():
             if value.get("parent_context") == user_context["topic"]:
@@ -54,7 +61,6 @@ def get_bot_response(user_input):
                 if match and match[1] > 85:
                     return value
 
-    # Langkah 2: Jika tidak ada kecocokan kontekstual, lakukan pencarian umum.
     highest_score = 0
     best_match_key = None
     for key, value in knowledge_base.items():
@@ -63,16 +69,12 @@ def get_bot_response(user_input):
             highest_score = match[1]
             best_match_key = key
 
-    # Jika kecocokan terbaik cukup tinggi, berikan jawaban
     if highest_score > 75:
-        response_data = knowledge_base[best_match_key].copy() # Salin data untuk dimodifikasi
+        response_data = knowledge_base[best_match_key].copy()
 
-        # --- LOGIKA SAPAAN DINAMIS ---
         if best_match_key == 'greetings':
             greeting = get_dynamic_greeting()
-            # Gabungkan sapaan dinamis dengan sisa pesan dari knowledge base
             response_data['response'] = f"{greeting} {response_data['response']}"
-        # -----------------------------
 
         if "context_id" in response_data:
             user_context["topic"] = response_data["context_id"]
@@ -83,14 +85,12 @@ def get_bot_response(user_input):
             
         return response_data
 
-    # Jawaban default jika tidak ada yang cocok sama sekali
     user_context["topic"] = None
     return {
         "response": "Maaf, saya belum mengerti. Coba ketik 'menu' untuk melihat pilihan utama.",
         "suggestions": ["Menu Utama"]
     }
 
-# --- ENDPOINTS (TIDAK ADA PERUBAHAN) ---
 @app.route('/api/chat', methods=['POST'])
 def chat():
     data = request.get_json()
