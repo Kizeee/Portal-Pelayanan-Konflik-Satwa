@@ -37,7 +37,7 @@ const handleSuggestionClick = (suggestionText) => {
 const sendFeedback = async (message, feedbackType) => {
   message.feedback = feedbackType; // Update UI untuk menandai feedback sudah diberikan
   try {
-    await fetch('http://Kizeee.pythonanywhere.com/api/feedback', {
+    await fetch('http://Rizky261.pythonanywhere.com/api/feedback', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
