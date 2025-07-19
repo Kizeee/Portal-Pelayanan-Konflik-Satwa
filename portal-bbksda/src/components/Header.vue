@@ -41,7 +41,7 @@ const handleLogout = async () => {
         <div class="hidden md:flex items-center space-x-8">
           <a href="#" @click.prevent="emit('navigate', 'home')" :class="navLinkClass('home')">Beranda</a>
           <a href="#" @click.prevent="emit('navigate', 'dashboard')" :class="navLinkClass('dashboard')">Dasbor</a>
-          <a href="#" @click.prevent="emit('navigate', 'bantuan')" :class="navLinkClass('bantuan')">Pusat Bantuan</a>
+          <a href="#" @click.prevent="emit('navigate', 'peta')" :class="navLinkClass('peta')">Peta Sebaran</a>
           <a href="#" @click.prevent="emit('navigate', 'lapor')" :class="navLinkClass('lapor')">Buat Laporan</a>
           <a href="#" @click.prevent="emit('navigate', 'lihat')" :class="navLinkClass('lihat')">Lihat Laporan</a>
           
@@ -58,7 +58,6 @@ const handleLogout = async () => {
     <div v-show="mobileMenuOpen" class="md:hidden bg-white border-t">
       <a href="#" @click.prevent="navigateAndClose('home')" class="block py-3 px-4 text-base font-medium text-gray-600 hover:bg-gray-50">Beranda</a>
       <a href="#" @click.prevent="navigateAndClose('dashboard')" class="block py-3 px-4 text-base font-medium text-gray-600 hover:bg-gray-50">Dasbor</a>
-      <a href="#" @click.prevent="emit('open-chatbot')" class="block py-3 px-4 text-base font-medium text-gray-600 hover:bg-gray-50">Pusat Bantuan</a>
       <a href="#" @click.prevent="navigateAndClose('peta')" class="block py-3 px-4 text-base font-medium text-gray-600 hover:bg-gray-50">Peta Sebaran</a>
       <a href="#" @click.prevent="navigateAndClose('lapor')" class="block py-3 px-4 text-base font-medium text-gray-600 hover:bg-gray-50">Buat Laporan</a>
       <a href="#" @click.prevent="navigateAndClose('lihat')" class="block py-3 px-4 text-base font-medium text-gray-600 hover:bg-gray-50">Lihat Laporan</a>
