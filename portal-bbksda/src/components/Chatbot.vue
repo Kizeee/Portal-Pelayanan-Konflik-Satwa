@@ -72,38 +72,47 @@ const sendMessage = async (messageTextOverride) => {
   scrollToBottom();
 
   try {
-    const response = await fetch('http://127.0.0.1:5000/api/chat', {
+    const response = await fetch('https://chatbot-bbksda-backend.onrender.com/api/chat', { // Pastikan URL sudah diganti
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ message: messageText }),
     });
 
-    if (!response.ok) throw new Error('Gagal menghubungi server.');
-    const data = await response.json();
-    
-    // Hapus indikator "mengetik..."
+    // Hapus indikator "mengetik..." terlebih dahulu
     messages.value = messages.value.filter(m => m.id !== 'loading');
-    
-    // Tambahkan respons dari bot ke tampilan
-    messages.value.push({
-      id: Date.now() + 1,
-      text: data.response,
-      sender: 'bot',
-      suggestions: data.suggestions || [],
-      link: data.link,
-      link_text: data.link_text,
-      whatsapp_link: data.whatsapp_link,
-      social_links: data.social_links || [],
-      image_url: data.image_url,
-      feedback: data.response ? null : undefined, // Beri opsi feedback jika ada respons
-    });
+
+    if (!response.ok) {
+      throw new Error('Respons jaringan tidak baik-baik saja.');
+    }
+
+    const data = await response.json();
+
+    // Pastikan 'data' dan 'data.response' ada sebelum digunakan
+    if (data && data.response) {
+      messages.value.push({
+        id: Date.now() + 1,
+        text: data.response,
+        sender: 'bot',
+        suggestions: data.suggestions || [],
+        link: data.link,
+        link_text: data.link_text,
+        whatsapp_link: data.whatsapp_link,
+        social_links: data.social_links || [],
+        image_url: data.image_url,
+        feedback: data.response ? null : undefined,
+      });
+    } else {
+      // Jika format data tidak sesuai, tampilkan pesan error
+      throw new Error("Format respons dari server tidak dikenali.");
+    }
 
   } catch (error) {
     console.error('Error:', error);
+    // Hapus indikator loading jika masih ada saat error
     messages.value = messages.value.filter(m => m.id !== 'loading');
     messages.value.push({
       id: Date.now() + 1,
-      text: 'Maaf, terjadi kesalahan. Pastikan server bantuan (Python) sedang berjalan.',
+      text: 'Maaf, terjadi kesalahan saat memproses jawaban dari server.',
       sender: 'bot'
     });
   }
