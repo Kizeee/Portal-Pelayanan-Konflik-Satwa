@@ -1,14 +1,19 @@
 # File: app.py
 # Backend Flask dengan logika konteks yang lebih andal dan sapaan dinamis.
 
-import json
-from flask import Flask, request, jsonify
 from flask_cors import CORS
 from fuzzywuzzy import process
-from datetime import datetime # <- Tambahkan import ini
+from datetime import datetime
 
 app = Flask(__name__)
-CORS(app)
+
+# ▼▼▼ GANTI BAGIAN INI ▼▼▼
+# Ganti URL di bawah ini dengan URL Vercel Anda yang sebenarnya
+origins = [
+    "http://localhost:5173",  # Untuk development di komputer lokal
+    "https://portal-pelayanan-konflik-satwa.vercel.app"  # GANTI DENGAN URL VERCEL ANDA
+]
+CORS(app, origins=origins)
 
 # --- MEMUAT KNOWLEDGE BASE ---
 def load_knowledge_base():
