@@ -13,7 +13,7 @@ app = Flask(__name__)
 # --- PERBAIKAN CORS (Pastikan URL Vercel Anda sudah benar) ---
 origins = [
     "http://localhost:5173",
-    "https://pelayanan-konflik-satwa.vercel.app/" # <-- GANTI DENGAN URL VERCEL ANDA
+    "https://pelayanan-konflik-satwa.vercel.app" # <-- GANTI DENGAN URL VERCEL ANDA
 ]
 CORS(app, origins=origins)
 
