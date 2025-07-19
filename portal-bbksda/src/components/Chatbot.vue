@@ -37,7 +37,7 @@ const handleSuggestionClick = (suggestionText) => {
 const sendFeedback = async (message, feedbackType) => {
   message.feedback = feedbackType; // Update UI untuk menandai feedback sudah diberikan
   try {
-    await fetch('http://127.0.0.1:5000/api/feedback', {
+    await fetch('http://Kizeee.pythonanywhere.com/api/feedback', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -72,7 +72,7 @@ const sendMessage = async (messageTextOverride) => {
   scrollToBottom();
 
   try {
-    const response = await fetch('https://chatbot-bbksda-backend.onrender.com/api/chat', { // Pastikan URL sudah diganti
+    const response = await fetch('http://Rizky61.pythonanywhere.com/api/chat', { // Pastikan URL sudah diganti
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ message: messageText }),
