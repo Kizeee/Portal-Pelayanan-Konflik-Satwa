@@ -1,5 +1,0 @@
-Flask
-Flask-Cors
-fuzzywuzzy
-python-levenshtein
-gunicorn
