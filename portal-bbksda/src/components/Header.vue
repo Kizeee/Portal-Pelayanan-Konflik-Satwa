@@ -43,6 +43,7 @@ const handleLogout = async () => {
           <a href="#" @click.prevent="emit('navigate', 'dashboard')" :class="navLinkClass('dashboard')">Dasbor</a>
           <a href="#" @click.prevent="emit('navigate', 'peta')" :class="navLinkClass('peta')">Peta Sebaran</a>
           <a href="#" @click.prevent="emit('navigate', 'lapor')" :class="navLinkClass('lapor')">Buat Laporan</a>
+          <a href="#" @click.prevent="emit('navigate', 'laporan-saya')" :class="navLinkClass('laporan-saya')">Laporan Saya</a>
           <a href="#" @click.prevent="emit('navigate', 'lihat')" :class="navLinkClass('lihat')">Lihat Laporan</a>
           
           <a v-if="hasMyReports" href="#" @click.prevent="emit('navigate', 'laporan-saya')" :class="navLinkClass('laporan-saya')" class="bg-blue-100 text-blue-800 px-3 py-1.5 rounded-full text-sm font-semibold">Laporan Saya</a>
