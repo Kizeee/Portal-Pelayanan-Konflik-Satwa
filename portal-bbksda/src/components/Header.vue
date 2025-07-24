@@ -43,11 +43,8 @@ const handleLogout = async () => {
           <a href="#" @click.prevent="emit('navigate', 'dashboard')" :class="navLinkClass('dashboard')">Dasbor</a>
           <a href="#" @click.prevent="emit('navigate', 'peta')" :class="navLinkClass('peta')">Peta Sebaran</a>
           <a href="#" @click.prevent="emit('navigate', 'lapor')" :class="navLinkClass('lapor')">Buat Laporan</a>
-          <a href="#" @click.prevent="emit('navigate', 'laporan-saya')" :class="navLinkClass('laporan-saya')">Laporan Saya</a>
-          <a href="#" @click.prevent="emit('navigate', 'lihat')" :class="navLinkClass('lihat')">Lihat Laporan</a>
-          
+          <a href="#" @click.prevent="emit('navigate', 'lihat')" :class="navLinkClass('lihat')">Lihat Laporan</a> 
           <a v-if="hasMyReports" href="#" @click.prevent="emit('navigate', 'laporan-saya')" :class="navLinkClass('laporan-saya')" class="bg-blue-100 text-blue-800 px-3 py-1.5 rounded-full text-sm font-semibold">Laporan Saya</a>
-
           <button v-if="user" @click="handleLogout" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors text-sm font-semibold">Logout</button>
           <a v-else href="#" @click.prevent="emit('navigate', 'login')" :class="navLinkClass('login')">Login Admin</a>
         </div>
