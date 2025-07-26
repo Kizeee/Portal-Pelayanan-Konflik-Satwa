@@ -5,11 +5,11 @@ import { auth } from '../firebase';
 
 const props = defineProps({
   currentPage: String,
-  user: Object,
+  user: Object, // Ini akan null jika tidak ada yang login
   hasMyReports: Boolean,
 });
 
-const emit = defineEmits(['navigate', 'open-chatbot']);
+const emit = defineEmits(['navigate']);
 
 const mobileMenuOpen = ref(false);
 
@@ -26,7 +26,8 @@ const navigateAndClose = (page) => {
 
 const handleLogout = async () => {
   await signOut(auth);
-  navigateAndClose('home');
+  // Arahkan ke halaman utama setelah logout
+  navigateAndClose('home'); 
 };
 </script>
 
@@ -38,30 +39,47 @@ const handleLogout = async () => {
           <img src="/logo-BBKSDA.png" alt="Logo BBKSDA Riau" class="h-10 w-10 object-contain">
           <span class="text-xl font-bold text-gray-800">BBKSDA Riau</span>
         </div>
+        
         <div class="hidden md:flex items-center space-x-8">
           <a href="#" @click.prevent="emit('navigate', 'home')" :class="navLinkClass('home')">Beranda</a>
-          <a href="#" @click.prevent="emit('navigate', 'dashboard')" :class="navLinkClass('dashboard')">Dasbor</a>
-          <a href="#" @click.prevent="emit('navigate', 'peta')" :class="navLinkClass('peta')">Peta Sebaran</a>
-          <a href="#" @click.prevent="emit('navigate', 'lapor')" :class="navLinkClass('lapor')">Buat Laporan</a>
-          <a href="#" @click.prevent="emit('navigate', 'lihat')" :class="navLinkClass('lihat')">Lihat Laporan</a> 
-          <a v-if="hasMyReports" href="#" @click.prevent="emit('navigate', 'laporan-saya')" :class="navLinkClass('laporan-saya')" class="bg-blue-100 text-blue-800 px-3 py-1.5 rounded-full text-sm font-semibold">Laporan Saya</a>
-          <button v-if="user" @click="handleLogout" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors text-sm font-semibold">Logout</button>
-          <a v-else href="#" @click.prevent="emit('navigate', 'login')" :class="navLinkClass('login')">Login Admin</a>
+          
+          <template v-if="user">
+            <a href="#" @click.prevent="emit('navigate', 'dashboard')" :class="navLinkClass('dashboard')">Dasbor</a>
+            <a href="#" @click.prevent="emit('navigate', 'peta')" :class="navLinkClass('peta')">Peta Sebaran</a>
+            <a href="#" @click.prevent="emit('navigate', 'lihat')" :class="navLinkClass('lihat')">Lihat Laporan</a>
+            <button @click="handleLogout" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors text-sm font-semibold">Logout</button>
+          </template>
+          
+          <template v-else>
+            <a href="#" @click.prevent="emit('navigate', 'dashboard')" :class="navLinkClass('dashboard')">Dasbor</a>
+            <a href="#" @click.prevent="emit('navigate', 'lapor')" :class="navLinkClass('lapor')">Buat Laporan</a>
+            <a href="#" @click.prevent="emit('navigate', 'laporan-saya')" :class="navLinkClass('laporan-saya')">Laporan Saya</a>
+            <a href="#" @click.prevent="emit('navigate', 'login')" :class="navLinkClass('login')">Login Admin</a>
+          </template>
         </div>
+        
         <div class="md:hidden flex items-center">
           <button @click="mobileMenuOpen = !mobileMenuOpen" class="text-gray-600"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" /></svg></button>
         </div>
       </div>
     </nav>
+
     <div v-show="mobileMenuOpen" class="md:hidden bg-white border-t">
       <a href="#" @click.prevent="navigateAndClose('home')" class="block py-3 px-4 text-base font-medium text-gray-600 hover:bg-gray-50">Beranda</a>
-      <a href="#" @click.prevent="navigateAndClose('dashboard')" class="block py-3 px-4 text-base font-medium text-gray-600 hover:bg-gray-50">Dasbor</a>
-      <a href="#" @click.prevent="navigateAndClose('peta')" class="block py-3 px-4 text-base font-medium text-gray-600 hover:bg-gray-50">Peta Sebaran</a>
-      <a href="#" @click.prevent="navigateAndClose('lapor')" class="block py-3 px-4 text-base font-medium text-gray-600 hover:bg-gray-50">Buat Laporan</a>
-      <a href="#" @click.prevent="navigateAndClose('lihat')" class="block py-3 px-4 text-base font-medium text-gray-600 hover:bg-gray-50">Lihat Laporan</a>
-      <a v-if="hasMyReports" href="#" @click.prevent="navigateAndClose('laporan-saya')" class="block py-3 px-4 text-base font-medium text-blue-800 bg-blue-50">Laporan Saya</a>
-      <a v-if="user" href="#" @click.prevent="handleLogout" class="block py-3 px-4 text-base font-medium text-red-600 hover:bg-gray-50">Logout</a>
-      <a v-else href="#" @click.prevent="navigateAndClose('login')" class="block py-3 px-4 text-base font-medium text-gray-600 hover:bg-gray-50">Login Admin</a>
+      
+      <template v-if="user">
+        <a href="#" @click.prevent="navigateAndClose('dashboard')" class="block py-3 px-4 text-base font-medium text-gray-600 hover:bg-gray-50">Dasbor</a>
+        <a href="#" @click.prevent="navigateAndClose('peta')" class="block py-3 px-4 text-base font-medium text-gray-600 hover:bg-gray-50">Peta Sebaran</a>
+        <a href="#" @click.prevent="navigateAndClose('lihat')" class="block py-3 px-4 text-base font-medium text-gray-600 hover:bg-gray-50">Lihat Laporan</a>
+        <a href="#" @click.prevent="handleLogout" class="block py-3 px-4 text-base font-medium text-red-600 hover:bg-gray-50">Logout</a>
+      </template>
+      
+      <template v-else>
+        <a href="#" @click.prevent="navigateAndClose('dashboard')" class="block py-3 px-4 text-base font-medium text-gray-600 hover:bg-gray-50">Dasbor</a>
+        <a href="#" @click.prevent="navigateAndClose('lapor')" class="block py-3 px-4 text-base font-medium text-gray-600 hover:bg-gray-50">Buat Laporan</a>
+        <a href="#" @click.prevent="navigateAndClose('laporan-saya')" class="block py-3 px-4 text-base font-medium text-gray-600 hover:bg-gray-50">Laporan Saya</a>
+        <a href="#" @click.prevent="navigateAndClose('login')" class="block py-3 px-4 text-base font-medium text-gray-600 hover:bg-gray-50">Login Admin</a>
+      </template>
     </div>
   </header>
 </template>
