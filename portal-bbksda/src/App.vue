@@ -174,7 +174,7 @@ onMounted(() => {
       </div>
       <template v-else>
         <HomePage v-if="currentPage === 'home'" @navigate="navigate" />
-        <DashboardPage v-if="currentPage === 'dashboard' && user" :reports="laporanList" />
+        <DashboardPage v-if="currentPage === 'dashboard'" :reports="laporanList" />
         <PetaPage v-if="currentPage === 'peta'" :reports="reportsWithCoords" />
         <LaporPage v-if="currentPage === 'lapor'" @report-submitted="handleReportSubmitted" />
         <LihatLaporanPage

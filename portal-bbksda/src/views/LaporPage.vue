@@ -1,15 +1,36 @@
 <script setup>
 import { ref } from 'vue';
 import { collection, addDoc } from 'firebase/firestore';
-// MODIFIKASI: Impor 'auth' bersama 'db'
-import { db, auth } from '../firebase';
+import { db } from '../firebase';
 import MapPicker from '../components/MapPicker.vue';
 
 const emit = defineEmits(['report-submitted']);
 
 const isSubmitting = ref(false);
-const newLaporan = ref({ nama: '', telepon: '', tanggal: new Date().toISOString().slice(0, 10), jenisSatwa: '', lokasi: '', lat: '', lng: '', deskripsi: '' });
+const newLaporan = ref({
+  nama: '',
+  telepon: '',
+  tanggal: new Date().toISOString().slice(0, 10),
+  jenisSatwa: '',
+  lokasi: '',
+  lat: '',
+  lng: '',
+  deskripsi: ''
+});
 const errors = ref({});
+const selectedFile = ref(null); // State untuk menampung file gambar yang dipilih
+
+// Fungsi untuk menangani perubahan pada input file
+const handleFileChange = (event) => {
+  const file = event.target.files[0];
+  if (file && file.type.startsWith('image/')) {
+    selectedFile.value = file;
+    errors.value.gambar = null; // Hapus error jika file valid
+  } else {
+    selectedFile.value = null;
+    errors.value.gambar = 'Harap pilih file gambar yang valid (jpg, png, dll).';
+  }
+};
 
 const handleLocationUpdate = (coords) => {
   newLaporan.value.lat = coords.lat.toFixed(6);
@@ -17,7 +38,22 @@ const handleLocationUpdate = (coords) => {
 };
 
 const resetForm = () => {
-  newLaporan.value = { nama: '', telepon: '', tanggal: new Date().toISOString().slice(0, 10), jenisSatwa: '', lokasi: '', lat: '', lng: '', deskripsi: '' };
+  newLaporan.value = {
+    nama: '',
+    telepon: '',
+    tanggal: new Date().toISOString().slice(0, 10),
+    jenisSatwa: '',
+    lokasi: '',
+    lat: '',
+    lng: '',
+    deskripsi: ''
+  };
+  selectedFile.value = null; // Reset file juga
+  // Bersihkan input file secara manual jika perlu
+  const fileInput = document.getElementById('gambar');
+  if (fileInput) {
+    fileInput.value = '';
+  }
 };
 
 const validateAndSubmit = async () => {
@@ -30,40 +66,58 @@ const validateAndSubmit = async () => {
   if (!newLaporan.value.lokasi) errors.value.lokasi = "Lokasi tidak boleh kosong.";
   if (!newLaporan.value.lat || !newLaporan.value.lng) errors.value.lokasi = "Silakan tentukan lokasi di peta.";
   if (!newLaporan.value.deskripsi) errors.value.deskripsi = "Deskripsi tidak boleh kosong.";
-
+  // Validasi baru untuk gambar
+  if (!selectedFile.value) errors.value.gambar = "Anda harus mengupload gambar kejadian.";
+  
   if (Object.keys(errors.value).length === 0) {
     submitLaporan();
   }
 };
 
 const submitLaporan = async () => {
-  // BARU: Periksa apakah pengguna sudah login
-  if (!auth.currentUser) {
-    alert('Anda harus login untuk bisa membuat laporan.');
-    return;
-  }
-
   isSubmitting.value = true;
+  let imageUrl = '';
+
   try {
+    const CLOUD_NAME = 'drjznlsij';
+    const UPLOAD_PRESET = 'laporan_satwa_unsigned'; 
+    
+    const formData = new FormData();
+    formData.append('file', selectedFile.value);
+    formData.append('upload_preset', UPLOAD_PRESET);
+
+    const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new Error('Gagal upload gambar ke Cloudinary. Pastikan Cloud Name dan Upload Preset sudah benar.');
+    }
+
+    const data = await response.json();
+    imageUrl = data.secure_url; // URL gambar dari Cloudinary
+
+    // --- SIMPAN DATA KE FIRESTORE ---
     const reportData = {
       ...newLaporan.value,
+      imageUrl: imageUrl, // Simpan URL gambar yang didapat dari Cloudinary
       status: 'Diterima',
       createdAt: new Date(),
-      // BARU: Tambahkan ID pengguna yang sedang login ke data laporan
-      userId: auth.currentUser.uid,
     };
     
-    // Simpan laporan ke Firestore
-    await addDoc(collection(db, "laporan"), reportData);
+    const docRef = await addDoc(collection(db, "laporan"), reportData);
 
-    // DIHAPUS: Logika localStorage tidak lagi diperlukan karena kita menggunakan userId
+    const myReportIds = JSON.parse(localStorage.getItem('myReportIds') || '[]');
+    myReportIds.push(docRef.id);
+    localStorage.setItem('myReportIds', JSON.stringify(myReportIds));
     
     resetForm();
     emit('report-submitted');
 
   } catch (error) {
     console.error("Error submitting report:", error);
-    alert('Gagal mengirim laporan. Silakan coba lagi.');
+    alert(error.message || 'Gagal mengirim laporan. Silakan coba lagi.');
   } finally {
     isSubmitting.value = false;
   }
@@ -74,6 +128,7 @@ const submitLaporan = async () => {
   <div class="max-w-4xl mx-auto bg-white p-8 sm:p-10 rounded-2xl shadow-lg">
     <h2 class="text-3xl font-bold mb-2 text-center text-brand-green">Formulir Pengaduan Konflik</h2>
     <p class="text-center text-gray-500 mb-8">Isi formulir di bawah ini dengan data yang akurat.</p>
+    
     <form @submit.prevent="validateAndSubmit">
       <div class="space-y-6">
         <div>
@@ -97,13 +152,38 @@ const submitLaporan = async () => {
 
         <div>
           <label for="satwa" class="block text-sm font-semibold text-gray-700 mb-1">Jenis Satwa</label>
-          <select v-model="newLaporan.jenisSatwa" id="satwa" class="w-full px-4 py-2 border rounded-lg focus:ring-brand-green-light focus:border-brand-green-light" :class="{'border-red-500': errors.jenisSatwa}"><option disabled value="">Pilih jenis satwa</option><option>Gajah Sumatera</option><option>Harimau Sumatera</option><option>Beruang Madu</option><option>Buaya</option><option>Monyet/Kera</option><option>Lainnya</option></select>
+          <select v-model="newLaporan.jenisSatwa" id="satwa" class="w-full px-4 py-2 border rounded-lg focus:ring-brand-green-light focus:border-brand-green-light" :class="{'border-red-500': errors.jenisSatwa}">
+            <option disabled value="">Pilih jenis satwa</option>
+            <option>Gajah Sumatera</option>
+            <option>Harimau Sumatera</option>
+            <option>Beruang Madu</option>
+            <option>Buaya</option>
+            <option>Monyet/Kera</option>
+            <option>Lainnya</option>
+          </select>
           <p v-if="errors.jenisSatwa" class="text-red-600 text-sm mt-1">{{ errors.jenisSatwa }}</p>
+        </div>
+        
+        <div>
+          <label for="gambar" class="block text-sm font-semibold text-gray-700 mb-1">Upload Foto Kejadian (Wajib)</label>
+          <input 
+            type="file" 
+            @change="handleFileChange" 
+            id="gambar" 
+            class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
+            :class="{'ring-2 ring-red-500 rounded-lg': errors.gambar}"
+            accept="image/png, image/jpeg, image/jpg"
+          >
+          <p v-if="errors.gambar" class="text-red-600 text-sm mt-1">{{ errors.gambar }}</p>
+          <div v-if="selectedFile" class="mt-4">
+             <img :src="URL.createObjectURL(selectedFile)" alt="Preview Gambar" class="w-1/2 max-w-xs rounded-lg shadow-md">
+          </div>
         </div>
 
         <div>
           <label for="lokasi" class="block text-sm font-semibold text-gray-700 mb-1">Lokasi Kejadian (Desa/Kecamatan)</label>
-          <input type="text" v-model="newLaporan.lokasi" id="lokasi" class="w-full px-4 py-2 border rounded-lg focus:ring-brand-green-light focus:border-brand-green-light" :class="{'border-red-500': errors.lokasi}" placeholder="Contoh: Desa Sialang, Kec. Pangkalan Kuras"><p v-if="errors.lokasi" class="error-message">{{ errors.lokasi }}</p>
+          <input type="text" v-model="newLaporan.lokasi" id="lokasi" class="w-full px-4 py-2 border rounded-lg focus:ring-brand-green-light focus:border-brand-green-light" :class="{'border-red-500': errors.lokasi}" placeholder="Contoh: Desa Sialang, Kec. Pangkalan Kuras">
+          <p v-if="errors.lokasi" class="text-red-600 text-sm mt-1">{{ errors.lokasi }}</p>
         </div>
 
         <div>
@@ -121,6 +201,7 @@ const submitLaporan = async () => {
           <p v-if="errors.deskripsi" class="text-red-600 text-sm mt-1">{{ errors.deskripsi }}</p>
         </div>
       </div>
+      
       <div class="mt-8 text-right">
         <button type="submit" :disabled="isSubmitting" class="bg-gradient-to-r from-brand-green to-brand-green-light text-white font-bold py-3 px-8 rounded-lg hover:shadow-xl transition-all duration-300 shadow-md disabled:bg-gray-400 disabled:cursor-not-allowed">
           {{ isSubmitting ? 'Mengirim...' : 'Kirim Laporan' }}

@@ -2,7 +2,7 @@
 import { ref, watch, computed } from 'vue';
 import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { db } from '../firebase';
-import html2pdf from 'html2pdf.js'; // <-- BARU: Impor library
+import html2pdf from 'html2pdf.js';
 
 const props = defineProps({
   report: Object,
@@ -72,13 +72,12 @@ const statusClass = (status) => {
   return classes[status] || 'bg-gray-100 text-gray-800';
 };
 
-// --- LOGIKA UNTUK DOWNLOAD PDF ---
-const reportPdfContent = ref(null); // <-- BARU: Ref untuk elemen HTML
+const reportPdfContent = ref(null);
 
 const downloadPDF = () => {
   const element = reportPdfContent.value;
   const options = {
-    margin:       [0.7, 0.7, 0.7, 0.7], // Margin dalam inch
+    margin:       [0.7, 0.7, 0.7, 0.7],
     filename:     `laporan-${props.report.id}.pdf`,
     image:        { type: 'jpeg', quality: 0.98 },
     html2canvas:  { scale: 2, useCORS: true },
@@ -87,7 +86,6 @@ const downloadPDF = () => {
 
   html2pdf().from(element).set(options).save();
 };
-
 </script>
 
 <template>
@@ -115,6 +113,16 @@ const downloadPDF = () => {
         <div class="md:col-span-2"><p class="font-semibold text-gray-500">Lokasi</p><p class="text-lg">{{ report.lokasi }}</p></div>
         <div class="md:col-span-2"><p class="font-semibold text-gray-500">Koordinat</p><p class="text-lg font-mono text-blue-600 bg-gray-100 px-2 py-1 rounded inline-block">{{ report.lat }}, {{ report.lng }}</p></div>
         <div class="md:col-span-2"><p class="font-semibold text-gray-500">Deskripsi</p><p class="text-lg whitespace-pre-wrap bg-gray-100 p-4 rounded-md">{{ report.deskripsi }}</p></div>
+        
+        <div v-if="report.imageUrl" class="md:col-span-2">
+          <p class="font-semibold text-gray-500">Foto Kejadian</p>
+          <div class="mt-2 rounded-lg shadow-md overflow-hidden max-w-lg h-96">
+            <a :href="report.imageUrl" target="_blank" rel="noopener noreferrer">
+              <img :src="report.imageUrl" alt="Foto Kejadian" class="w-full h-full object-cover hover:scale-105 transition-transform duration-300">
+            </a>
+          </div>
+        </div>
+        
       </div>
     </div>
     
@@ -135,7 +143,7 @@ const downloadPDF = () => {
       </div>
       
       <div class="mt-6 text-right">
-        <button @click="downloadPDF" class="bg-red-700 text-white font-bold py-2 px-5 rounded-lg hover:bg-gray-800 transition-colors inline-flex items-center space-x-2">
+        <button @click="downloadPDF" class="bg-gray-700 text-white font-bold py-2 px-5 rounded-lg hover:bg-gray-800 transition-colors inline-flex items-center space-x-2">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v3.586l-1.293-1.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V8z" clip-rule="evenodd" /></svg>
           <span>Download Laporan (PDF)</span>
         </button>
