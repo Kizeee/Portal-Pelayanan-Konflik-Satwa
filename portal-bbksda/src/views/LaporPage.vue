@@ -1,7 +1,8 @@
 <script setup>
 import { ref } from 'vue';
 import { collection, addDoc } from 'firebase/firestore';
-import { db } from '../firebase';
+// MODIFIKASI: Impor 'auth' bersama 'db'
+import { db, auth } from '../firebase';
 import MapPicker from '../components/MapPicker.vue';
 
 const emit = defineEmits(['report-submitted']);
@@ -29,28 +30,33 @@ const validateAndSubmit = async () => {
   if (!newLaporan.value.lokasi) errors.value.lokasi = "Lokasi tidak boleh kosong.";
   if (!newLaporan.value.lat || !newLaporan.value.lng) errors.value.lokasi = "Silakan tentukan lokasi di peta.";
   if (!newLaporan.value.deskripsi) errors.value.deskripsi = "Deskripsi tidak boleh kosong.";
-  
+
   if (Object.keys(errors.value).length === 0) {
     submitLaporan();
   }
 };
 
 const submitLaporan = async () => {
+  // BARU: Periksa apakah pengguna sudah login
+  if (!auth.currentUser) {
+    alert('Anda harus login untuk bisa membuat laporan.');
+    return;
+  }
+
   isSubmitting.value = true;
   try {
     const reportData = {
       ...newLaporan.value,
       status: 'Diterima',
       createdAt: new Date(),
+      // BARU: Tambahkan ID pengguna yang sedang login ke data laporan
+      userId: auth.currentUser.uid,
     };
     
-    // Simpan laporan ke Firestore dan dapatkan referensi dokumennya
-    const docRef = await addDoc(collection(db, "laporan"), reportData);
+    // Simpan laporan ke Firestore
+    await addDoc(collection(db, "laporan"), reportData);
 
-    // --- LOGIKA BARU: Simpan ID ke localStorage ---
-    const myReportIds = JSON.parse(localStorage.getItem('myReportIds') || '[]');
-    myReportIds.push(docRef.id);
-    localStorage.setItem('myReportIds', JSON.stringify(myReportIds));
+    // DIHAPUS: Logika localStorage tidak lagi diperlukan karena kita menggunakan userId
     
     resetForm();
     emit('report-submitted');
