@@ -9,24 +9,21 @@ const props = defineProps({
   hasMyReports: Boolean,
 });
 
-const emit = defineEmits(['navigate']);
+const emit = defineEmits(['navigate', 'open-chatbot']);
 
 const mobileMenuOpen = ref(false);
 
-// Fungsi untuk styling link aktif (tidak ada perubahan)
 const navLinkClass = (page) => {
   return props.currentPage === page 
     ? 'text-brand-green font-semibold border-b-2 border-brand-green' 
     : 'text-gray-600 hover:text-brand-green transition-colors duration-300';
 };
 
-// Fungsi untuk navigasi di mobile (tidak ada perubahan)
 const navigateAndClose = (page) => {
   emit('navigate', page);
   mobileMenuOpen.value = false;
 };
 
-// Fungsi logout (tidak ada perubahan)
 const handleLogout = async () => {
   await signOut(auth);
   navigateAndClose('home'); 

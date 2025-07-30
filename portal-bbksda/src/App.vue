@@ -24,11 +24,11 @@ import EditLaporanForm from './components/EditLaporanForm.vue'
 // --- STATE UTAMA ---
 const currentPage = ref('home')
 const isLoading = ref(true)
-const user = ref(null) // Tetap ada untuk login admin
+const user = ref(null) // Untuk admin
 const laporanList = ref([])
 const selectedReportId = ref(null)
-const myReportIds = ref([]) // State untuk menyimpan ID laporan dari localStorage
-const isChatbotOpen = ref(false)
+const myReportIds = ref([]) // Untuk pengguna biasa
+const isChatbotOpen = ref(false) // Untuk chatbot
 
 // --- STATE NOTIFIKASI ---
 const showNotification = ref(false)
@@ -48,7 +48,6 @@ const selectedReport = computed(() => {
   return laporanList.value.find((r) => r.id === selectedReportId.value) || null
 })
 
-// Menggunakan localStorage untuk menampilkan laporan milik pengguna
 const myReports = computed(() => {
   return laporanList.value.filter((report) => myReportIds.value.includes(report.id))
 })
@@ -92,7 +91,6 @@ const handleReportSubmitted = () => {
     'Laporan Terkirim!',
     'Terima kasih. Laporan Anda telah berhasil kami terima.',
   )
-  // Baca ulang dari localStorage untuk memperbarui state
   myReportIds.value = JSON.parse(localStorage.getItem('myReportIds') || '[]')
   fetchLaporan()
 }
@@ -103,7 +101,7 @@ const handleReportUpdated = () => {
 }
 
 const handleLoginSuccess = () => {
-  navigate('dashboard') // Admin diarahkan ke dashboard
+  navigate('dashboard')
 }
 
 const handleCloseNotification = () => {
@@ -152,7 +150,6 @@ onMounted(() => {
   onAuthStateChanged(auth, (currentUser) => {
     user.value = currentUser
   })
-  // Membaca data dari localStorage saat aplikasi dimuat
   myReportIds.value = JSON.parse(localStorage.getItem('myReportIds') || '[]')
   fetchLaporan()
 })
@@ -223,6 +220,15 @@ onMounted(() => {
       </div>
     </div>
     
+    <button @click="isChatbotOpen = !isChatbotOpen" class="fixed bottom-5 right-5 h-16 w-16 bg-brand-green rounded-full shadow-lg text-white flex items-center justify-center z-[2001] hover:scale-110 transition-transform">
+      <svg v-if="!isChatbotOpen" xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+      </svg>
+      <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </button>
+
     <Chatbot :show="isChatbotOpen" @close="isChatbotOpen = false" />
   </div>
 </template>
