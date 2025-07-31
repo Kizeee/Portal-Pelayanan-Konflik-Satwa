@@ -336,13 +336,20 @@ watch(
 </template>
 
 <style scoped>
-/* CSS Anda sebagian besar sudah bagus, hanya beberapa penyesuaian kecil */
 .chat-container {
+  /* Pengaturan Posisi & Ukuran Dinamis */
   width: 400px;
-  height: 600px;
+  max-width: calc(100vw - 2.5rem); /* Lebar maks: lebar layar - (2 * 1.25rem margin kanan-kiri) */
+  max-height: calc(
+    100vh - 7.5rem
+  ); /* Tinggi maks: tinggi layar - (6rem margin bawah + 1.5rem margin atas) */
+
+  /* Styling Visual */
   background-color: white;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+
+  /* Layout Internal */
   display: flex;
   flex-direction: column;
 }
@@ -528,6 +535,7 @@ watch(
   font-size: 1rem;
   margin-right: 10px;
   transition: border-color 0.2s;
+  min-width: 0;
 }
 .chat-input input:focus {
   outline: none;
@@ -548,6 +556,7 @@ watch(
   justify-content: center;
   align-items: center;
   transition: background-color 0.2s;
+  flex-shrink: 0;
 }
 .chat-input button:disabled {
   background-color: #a5d6a7;
