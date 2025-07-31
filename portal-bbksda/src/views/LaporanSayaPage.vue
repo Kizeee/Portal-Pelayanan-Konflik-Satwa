@@ -25,9 +25,7 @@ const statusClass = (status) => {
   return classes[status] || 'bg-gray-100 text-gray-800';
 };
 
-// Fungsi untuk menentukan apakah laporan bisa diedit
 const canBeEdited = (status) => {
-  // Hanya laporan dengan status 'Diterima' yang bisa diedit
   return status === 'Diterima'; 
 };
 

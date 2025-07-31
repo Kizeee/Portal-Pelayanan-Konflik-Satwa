@@ -1,16 +1,12 @@
-# File: app.py
-# Backend Flask dengan logika konteks yang lebih andal dan sapaan dinamis.
-
 import json
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from fuzzywuzzy import process
-from datetime import datetime # <- Tambahkan import ini
+from datetime import datetime
 
 app = Flask(__name__)
 CORS(app)
 
-# --- MEMUAT KNOWLEDGE BASE ---
 def load_knowledge_base():
     try:
         with open('knowledge_base.json', 'r', encoding='utf-8') as f:
@@ -21,10 +17,8 @@ def load_knowledge_base():
 
 knowledge_base = load_knowledge_base()
 
-# --- MANAJEMEN KONTEKS ---
 user_context = {"topic": None}
 
-# --- FUNGSI BARU UNTUK SAPAAN DINAMIS ---
 def get_dynamic_greeting():
     """Membuat sapaan berdasarkan waktu saat ini."""
     current_hour = datetime.now().hour
@@ -37,11 +31,9 @@ def get_dynamic_greeting():
     else:
         return "Selamat Malam!"
 
-# --- FUNGSI UTAMA YANG DIPERBARUI ---
 def get_bot_response(user_input):
     text = user_input.lower().strip()
     
-    # Langkah 1: Prioritaskan pencarian berdasarkan konteks saat ini.
     if user_context.get("topic"):
         for key, value in knowledge_base.items():
             if value.get("parent_context") == user_context["topic"]:
@@ -49,7 +41,6 @@ def get_bot_response(user_input):
                 if match and match[1] > 85:
                     return value
 
-    # Langkah 2: Jika tidak ada kecocokan kontekstual, lakukan pencarian umum.
     highest_score = 0
     best_match_key = None
     for key, value in knowledge_base.items():
@@ -58,16 +49,11 @@ def get_bot_response(user_input):
             highest_score = match[1]
             best_match_key = key
 
-    # Jika kecocokan terbaik cukup tinggi, berikan jawaban
     if highest_score > 75:
-        response_data = knowledge_base[best_match_key].copy() # Salin data untuk dimodifikasi
-
-        # --- LOGIKA SAPAAN DINAMIS ---
+        response_data = knowledge_base[best_match_key].copy()
         if best_match_key == 'greetings':
             greeting = get_dynamic_greeting()
-            # Gabungkan sapaan dinamis dengan sisa pesan dari knowledge base
             response_data['response'] = f"{greeting} {response_data['response']}"
-        # -----------------------------
 
         if "context_id" in response_data:
             user_context["topic"] = response_data["context_id"]
@@ -78,14 +64,12 @@ def get_bot_response(user_input):
             
         return response_data
 
-    # Jawaban default jika tidak ada yang cocok sama sekali
     user_context["topic"] = None
     return {
         "response": "Maaf, saya belum mengerti. Coba ketik 'menu' untuk melihat pilihan utama.",
         "suggestions": ["Menu Utama"]
     }
 
-# --- ENDPOINTS (TIDAK ADA PERUBAHAN) ---
 @app.route('/api/chat', methods=['POST'])
 def chat():
     data = request.get_json()

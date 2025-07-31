@@ -1,7 +1,6 @@
 <script setup>
 import { ref, onMounted, nextTick, watch } from 'vue'
 
-// --- PROPS & EMITS ---
 const props = defineProps({
   show: {
     type: Boolean,
@@ -10,15 +9,12 @@ const props = defineProps({
 })
 const emit = defineEmits(['close'])
 
-// --- STATE MANAGEMENT ---
 const chatWindow = ref(null)
 const userInput = ref('')
 const messages = ref([])
 const isLoading = ref(false)
 
-// --- HELPER FUNCTIONS ---
 
-// Scroll otomatis ke pesan paling bawah
 const scrollToBottom = () => {
   nextTick(() => {
     if (chatWindow.value) {
@@ -27,23 +23,19 @@ const scrollToBottom = () => {
   })
 }
 
-// Fungsi BARU untuk menghapus percakapan
 const clearChat = () => {
-  messages.value = [] // Mengosongkan array pesan
-  sendMessage('halo') // Memulai kembali dengan sapaan awal
+  messages.value = [] 
+  sendMessage('halo')
 }
 
-// --- API & MESSAGE HANDLING ---
-
-// Mengirim feedback ke server
 const sendFeedback = async (message, feedbackType) => {
-  message.feedback = feedbackType // Update UI untuk menandai feedback
+  message.feedback = feedbackType 
   try {
     await fetch('http://127.0.0.1:5000/api/feedback', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        question: message.question, // Membutuhkan pertanyaan asli
+        question: message.question,
         answer: message.text,
         feedback: feedbackType,
       }),
@@ -54,15 +46,12 @@ const sendFeedback = async (message, feedbackType) => {
   }
 }
 
-// Fungsi utama untuk mengirim pesan
 const sendMessage = async (messageTextOverride) => {
   const text = messageTextOverride || userInput.value.trim()
   if (!text) return
 
-  // Simpan pertanyaan pengguna saat ini
   const userQuestion = text
 
-  // Tambahkan pesan pengguna ke UI
   messages.value.push({
     id: `user-${Date.now()}`,
     text: text,
@@ -84,7 +73,6 @@ const sendMessage = async (messageTextOverride) => {
     })
 
     if (!response.ok) {
-      // Menangkap error HTTP seperti 404 atau 500
       throw new Error(`HTTP error! status: ${response.status}`)
     }
 
@@ -94,12 +82,11 @@ const sendMessage = async (messageTextOverride) => {
       throw new Error('Format respons dari server tidak valid.')
     }
 
-    // Tambahkan respons bot ke UI
     messages.value.push({
       id: `bot-${Date.now()}`,
       text: data.response,
       sender: 'bot',
-      question: userQuestion, // Sertakan pertanyaan asli untuk feedback
+      question: userQuestion,
       suggestions: data.suggestions || [],
       link: data.link,
       link_text: data.link_text,
@@ -107,7 +94,7 @@ const sendMessage = async (messageTextOverride) => {
       social_links: data.social_links || [],
       image_url: data.image_url,
       resorts: data.resorts || [],
-      feedback: data.response ? null : undefined, // Inisialisasi status feedback
+      feedback: data.response ? null : undefined,
     })
   } catch (error) {
     console.error('Error:', error)
@@ -117,7 +104,6 @@ const sendMessage = async (messageTextOverride) => {
         'Tidak dapat terhubung ke server. Periksa koneksi internet Anda atau pastikan server backend berjalan.'
     }
 
-    // Tampilkan pesan error di chat
     messages.value.push({
       id: `error-${Date.now()}`,
       text: errorMessage,
@@ -129,19 +115,15 @@ const sendMessage = async (messageTextOverride) => {
   }
 }
 
-// --- LIFECYCLE HOOKS ---
 
-// Panggil "halo" saat komponen pertama kali dimuat
 onMounted(() => {
   if (props.show && messages.value.length === 0) {
     sendMessage('halo')
   }
 })
 
-// Awasi perubahan pada array pesan untuk auto-scroll
 watch(messages, scrollToBottom, { deep: true })
 
-// Awasi prop 'show' untuk memuat pesan awal saat chatbox muncul
 watch(
   () => props.show,
   (newValue) => {
@@ -155,7 +137,6 @@ watch(
 <template>
   <div v-if="props.show" class="fixed bottom-24 right-5 z-[2000]">
     <div class="chat-container">
-      <!-- Header -->
       <div class="chat-header">
         <h2>Pusat Bantuan Interaktif</h2>
         <div class="header-buttons">
@@ -194,7 +175,6 @@ watch(
         </div>
       </div>
 
-      <!-- Jendela Chat -->
       <div class="chat-window" ref="chatWindow">
         <div
           v-for="message in messages"
@@ -204,7 +184,6 @@ watch(
             message.sender === 'user' ? 'user-message-wrapper' : 'bot-message-wrapper',
           ]"
         >
-          <!-- Pesan Pengguna & Bot -->
           <div :class="['message', message.sender === 'user' ? 'user-message' : 'bot-message']">
             {{ message.text }}
           </div>
@@ -212,7 +191,6 @@ watch(
             new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
           }}</span>
 
-          <!-- Konten Tambahan dari Bot -->
           <div v-if="message.sender === 'bot'" class="bot-extras">
             <img
               v-if="message.image_url"
@@ -221,7 +199,6 @@ watch(
               class="bot-image"
             />
 
-            <!-- Daftar Resort -->
             <div v-if="message.resorts && message.resorts.length > 0" class="resort-list">
               <div v-for="resort in message.resorts" :key="resort.name" class="resort-item">
                 <div class="resort-name">{{ resort.name }}</div>
@@ -232,7 +209,6 @@ watch(
               </div>
             </div>
 
-            <!-- Tombol Saran -->
             <div
               v-if="message.suggestions && message.suggestions.length > 0"
               class="suggestions-container"
@@ -247,7 +223,6 @@ watch(
               </button>
             </div>
 
-            <!-- Tombol Link -->
             <div class="links-container">
               <a
                 v-if="message.link"
@@ -273,7 +248,6 @@ watch(
               >
             </div>
 
-            <!-- Tombol Feedback -->
             <div v-if="message.feedback === null" class="feedback-container">
               <button
                 @click="sendFeedback(message, 'good')"
@@ -297,7 +271,6 @@ watch(
           </div>
         </div>
 
-        <!-- Indikator Loading -->
         <div v-if="isLoading" class="message-wrapper bot-message-wrapper">
           <div class="loading-indicator">
             <span class="dot1"></span><span class="dot2"></span><span class="dot3"></span>
@@ -305,7 +278,6 @@ watch(
         </div>
       </div>
 
-      <!-- Input Chat -->
       <div class="chat-input">
         <input
           type="text"
@@ -337,19 +309,16 @@ watch(
 
 <style scoped>
 .chat-container {
-  /* Pengaturan Posisi & Ukuran Dinamis */
   width: 400px;
-  max-width: calc(100vw - 2.5rem); /* Lebar maks: lebar layar - (2 * 1.25rem margin kanan-kiri) */
+  max-width: calc(100vw - 2.5rem);
   max-height: calc(
     100vh - 7.5rem
-  ); /* Tinggi maks: tinggi layar - (6rem margin bawah + 1.5rem margin atas) */
+  );
 
-  /* Styling Visual */
   background-color: white;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 
-  /* Layout Internal */
   display: flex;
   flex-direction: column;
 }
@@ -367,12 +336,12 @@ watch(
   margin: 0;
   font-size: 1.1rem;
   font-weight: 600;
-  flex-grow: 1; /* Membuat judul mengambil sisa ruang */
+  flex-grow: 1; 
 }
 .header-buttons {
   display: flex;
   align-items: center;
-  gap: 8px; /* Jarak antar tombol */
+  gap: 8px;
 }
 .chat-window {
   flex-grow: 1;
@@ -450,7 +419,6 @@ watch(
   max-width: 100%;
   border-radius: 12px;
 }
-/* Penambahan untuk daftar resort */
 .resort-list {
   display: flex;
   flex-direction: column;

@@ -18,14 +18,13 @@ const newLaporan = ref({
   deskripsi: ''
 });
 const errors = ref({});
-const selectedFile = ref(null); // State untuk menampung file gambar yang dipilih
+const selectedFile = ref(null);
 
-// Fungsi untuk menangani perubahan pada input file
 const handleFileChange = (event) => {
   const file = event.target.files[0];
   if (file && file.type.startsWith('image/')) {
     selectedFile.value = file;
-    errors.value.gambar = null; // Hapus error jika file valid
+    errors.value.gambar = null;
   } else {
     selectedFile.value = null;
     errors.value.gambar = 'Harap pilih file gambar yang valid (jpg, png, dll).';
@@ -48,8 +47,7 @@ const resetForm = () => {
     lng: '',
     deskripsi: ''
   };
-  selectedFile.value = null; // Reset file juga
-  // Bersihkan input file secara manual jika perlu
+  selectedFile.value = null;
   const fileInput = document.getElementById('gambar');
   if (fileInput) {
     fileInput.value = '';
@@ -66,7 +64,6 @@ const validateAndSubmit = async () => {
   if (!newLaporan.value.lokasi) errors.value.lokasi = "Lokasi tidak boleh kosong.";
   if (!newLaporan.value.lat || !newLaporan.value.lng) errors.value.lokasi = "Silakan tentukan lokasi di peta.";
   if (!newLaporan.value.deskripsi) errors.value.deskripsi = "Deskripsi tidak boleh kosong.";
-  // Validasi baru untuk gambar
   if (!selectedFile.value) errors.value.gambar = "Anda harus mengupload gambar kejadian.";
   
   if (Object.keys(errors.value).length === 0) {
@@ -96,12 +93,11 @@ const submitLaporan = async () => {
     }
 
     const data = await response.json();
-    imageUrl = data.secure_url; // URL gambar dari Cloudinary
+    imageUrl = data.secure_url;
 
-    // --- SIMPAN DATA KE FIRESTORE ---
     const reportData = {
       ...newLaporan.value,
-      imageUrl: imageUrl, // Simpan URL gambar yang didapat dari Cloudinary
+      imageUrl: imageUrl,
       status: 'Diterima',
       createdAt: new Date(),
     };

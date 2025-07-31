@@ -10,11 +10,9 @@ let marker = null;
 
 const defaultCenter = [0.5104, 101.4383];
 
-// --- STATE BARU UNTUK PENGALAMAN PENGGUNA ---
 const isLocating = ref(false);
 const locationAccuracy = ref(null);
 
-// --- FUNGSI PENCARIAN LOKASI (GEOCODING) ---
 const searchQuery = ref('');
 const searchResults = ref([]);
 const isSearching = ref(false);
@@ -50,13 +48,12 @@ const selectLocation = (location) => {
   
   searchResults.value = [];
   searchQuery.value = location.display_name;
-  locationAccuracy.value = null; // Sembunyikan pesan akurasi saat lokasi dipilih manual
+  locationAccuracy.value = null;
 };
 
-// --- FUNGSI UNTUK MENDAPATKAN LOKASI PENGGUNA ---
 const getUserLocation = () => {
   if (navigator.geolocation) {
-    isLocating.value = true; // Tampilkan status "Mencari..."
+    isLocating.value = true;
     locationAccuracy.value = null;
 
     navigator.geolocation.getCurrentPosition(
@@ -68,7 +65,7 @@ const getUserLocation = () => {
         map.setView(userLatLng, 15);
         marker.setLatLng(userLatLng);
         emit('location-selected', userLatLng);
-        locationAccuracy.value = position.coords.accuracy; // Simpan nilai akurasi
+        locationAccuracy.value = position.coords.accuracy;
         isLocating.value = false;
       },
       (error) => {
@@ -163,7 +160,6 @@ onMounted(() => {
     <p class="text-sm text-center text-gray-600 mb-2">Atau, klik pada peta / geser pin untuk menentukan lokasi secara manual.</p>
     <div ref="mapContainer" style="height: 400px; width: 100%; border-radius: 0.75rem;"></div>
     
-    <!-- PESAN AKURASI BARU -->
     <div v-if="locationAccuracy" class="mt-2 text-center text-sm p-2 rounded-md" :class="locationAccuracy > 1000 ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'">
       <span v-if="locationAccuracy > 1000">Akurasi lokasi rendah (sekitar {{ (locationAccuracy / 1000).toFixed(1) }} km). Disarankan untuk menggeser pin secara manual.</span>
       <span v-else>Akurasi lokasi sekitar {{ Math.round(locationAccuracy) }} meter.</span>

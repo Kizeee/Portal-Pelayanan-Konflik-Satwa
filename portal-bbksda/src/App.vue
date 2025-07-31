@@ -4,13 +4,11 @@ import { auth, db } from './firebase'
 import { onAuthStateChanged } from 'firebase/auth'
 import { collection, getDocs, query, doc, getDoc, updateDoc } from 'firebase/firestore'
 
-// Import komponen UI
 import Header from './components/Header.vue'
 import Footer from './components/Footer.vue'
 import NotificationModal from './components/NotificationModal.vue'
 import Chatbot from './components/Chatbot.vue'
 
-// Import komponen Halaman (Views)
 import HomePage from './views/HomePage.vue'
 import PetaPage from './views/PetaPage.vue'
 import LaporPage from './views/LaporPage.vue'
@@ -21,24 +19,20 @@ import DashboardPage from './views/DashboardPage.vue'
 import LaporanSayaPage from './views/LaporanSayaPage.vue'
 import EditLaporanForm from './components/EditLaporanForm.vue'
 
-// --- STATE UTAMA ---
 const currentPage = ref('home')
 const isLoading = ref(true)
-const user = ref(null) // Untuk admin
+const user = ref(null)
 const laporanList = ref([])
 const selectedReportId = ref(null)
-const myReportIds = ref([]) // Untuk pengguna biasa
-const isChatbotOpen = ref(false) // Untuk chatbot
+const myReportIds = ref([]) 
+const isChatbotOpen = ref(false)
 
-// --- STATE NOTIFIKASI ---
 const showNotification = ref(false)
 const notification = ref({ type: '', title: '', message: '' })
 
-// --- STATE UNTUK EDIT ---
 const showEditModal = ref(false)
 const laporanUntukDiedit = ref(null)
 
-// --- COMPUTED PROPERTIES ---
 const reportsWithCoords = computed(() => {
   return laporanList.value.filter((laporan) => laporan.lat && laporan.lng)
 })
@@ -52,7 +46,6 @@ const myReports = computed(() => {
   return laporanList.value.filter((report) => myReportIds.value.includes(report.id))
 })
 
-// --- FUNGSI UTAMA ---
 const navigate = (page) => {
   currentPage.value = page
   window.scrollTo(0, 0)
@@ -113,7 +106,6 @@ const handleCloseNotification = () => {
   }
 }
 
-// --- FUNGSI UNTUK FITUR EDIT ---
 const handleEditReport = async (laporanId) => {
   try {
     const reportRef = doc(db, 'laporan', laporanId)
@@ -145,7 +137,6 @@ const handleSaveChanges = async (updatedData) => {
   }
 }
 
-// --- LIFECYCLE ---
 onMounted(() => {
   onAuthStateChanged(auth, (currentUser) => {
     user.value = currentUser

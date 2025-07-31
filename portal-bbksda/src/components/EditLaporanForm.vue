@@ -9,8 +9,6 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['close-modal', 'save-changes']);
-
-// State lokal untuk data form, tambahkan field baru
 const form = ref({
   nama: '',
   telepon: '',
@@ -20,12 +18,10 @@ const form = ref({
   deskripsi: ''
 });
 
-// `watch` akan mengupdate state `form` setiap kali props `laporanToEdit` berubah
 watch(() => props.laporanToEdit, (newLaporan) => {
   if (newLaporan) {
     form.value.nama = newLaporan.nama || '';
     form.value.telepon = newLaporan.telepon || '';
-    // Format tanggal agar sesuai dengan input type="date" (YYYY-MM-DD)
     form.value.tanggal = newLaporan.tanggal ? new Date(newLaporan.tanggal).toISOString().slice(0, 10) : '';
     form.value.jenisSatwa = newLaporan.jenisSatwa || '';
     form.value.lokasi = newLaporan.lokasi || '';
@@ -34,12 +30,10 @@ watch(() => props.laporanToEdit, (newLaporan) => {
 }, { immediate: true, deep: true });
 
 const handleSubmit = () => {
-  // Anda bisa menambahkan validasi di sini jika perlu
   if (!form.value.nama.trim() || !form.value.telepon.trim() || !form.value.jenisSatwa.trim() || !form.value.lokasi.trim()) {
     alert('Mohon isi semua field yang wajib diisi.');
     return;
   }
-  // Mengirimkan event dengan semua data yang sudah diubah
   emit('save-changes', { ...form.value });
 };
 </script>

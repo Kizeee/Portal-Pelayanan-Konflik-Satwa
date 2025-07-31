@@ -1,5 +1,4 @@
-// src/main.js
-import './assets/main.css' // Pastikan baris ini ada
+import './assets/main.css'
 
 import { createApp } from 'vue'
 import App from './App.vue'

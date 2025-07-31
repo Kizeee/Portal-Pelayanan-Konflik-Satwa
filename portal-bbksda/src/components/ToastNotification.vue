@@ -8,7 +8,6 @@ const props = defineProps({
 
 const emit = defineEmits(['close']);
 
-// Tutup notifikasi secara otomatis setelah 5 detik
 watch(() => props.show, (newValue) => {
   if (newValue) {
     setTimeout(() => {
