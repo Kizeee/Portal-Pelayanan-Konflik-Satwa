@@ -1,5 +1,4 @@
 <script setup>
-import { computed } from 'vue';
 
 const props = defineProps({
   myReports: Array,
@@ -29,7 +28,6 @@ const canBeEdited = (status) => {
   return status === 'Diterima'; 
 };
 
-// Fungsi untuk event klik pada tombol edit
 const handleEditClick = (laporanId) => {
   emit('edit-report', laporanId);
 };
