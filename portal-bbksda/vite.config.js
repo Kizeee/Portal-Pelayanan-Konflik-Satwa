@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { VitePWA } from 'vite-plugin-pwa'
+import basicSsl from '@vitejs/plugin-basic-ssl' // <-- 1. Tambahkan baris ini
 
 export default defineConfig({
   plugins: [
@@ -27,7 +28,7 @@ export default defineConfig({
             type: 'image/png'
           },
           {
-            src: '/logo-bbksda-512.png', 
+            src: '/logo-bbksda-512.png',
             sizes: '512x512',
             type: 'image/png'
           },
@@ -39,6 +40,7 @@ export default defineConfig({
           }
         ]
       }
-    })
+    }),
+    basicSsl() // <-- 2. Tambahkan baris ini
   ],
 })
