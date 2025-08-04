@@ -1,11 +1,12 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, watch, onUnmounted } from 'vue';
 import { collection, addDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import MapPicker from '../components/MapPicker.vue';
 
 const emit = defineEmits(['report-submitted']);
 
+// --- STATE MANAGEMENT ---
 const isSubmitting = ref(false);
 const newLaporan = ref({
   nama: '',
@@ -13,12 +14,42 @@ const newLaporan = ref({
   tanggal: new Date().toISOString().slice(0, 10),
   jenisSatwa: '',
   lokasi: '',
-  lat: '',
-  lng: '',
+  lat: null,
+  lng: null,
   deskripsi: ''
 });
 const errors = ref({});
 const selectedFile = ref(null);
+const imagePreviewUrl = ref(null);
+const submissionStatus = ref({ message: '', type: '' }); // Untuk notifikasi (pengganti alert)
+
+// --- REFS TEMPLATE ---
+const fileInputRef = ref(null); // Ref untuk mereset input file dengan cara Vue
+
+// --- FUNGSI-FUNGSI ---
+
+/**
+ * PERBAIKAN 1: Mengelola Image Preview URL untuk Mencegah Memory Leak
+ * Kita gunakan 'watch' untuk membuat dan membersihkan URL preview.
+ * Ini lebih aman daripada memanggil URL.createObjectURL() langsung di template.
+ */
+watch(selectedFile, (newFile, oldFile) => {
+  if (oldFile && imagePreviewUrl.value) {
+    URL.revokeObjectURL(imagePreviewUrl.value); // Hapus URL lama dari memori
+  }
+  if (newFile) {
+    imagePreviewUrl.value = URL.createObjectURL(newFile); // Buat URL baru
+  } else {
+    imagePreviewUrl.value = null;
+  }
+});
+
+// Pastikan URL dibersihkan saat komponen dihancurkan (misal pindah halaman)
+onUnmounted(() => {
+  if (imagePreviewUrl.value) {
+    URL.revokeObjectURL(imagePreviewUrl.value);
+  }
+});
 
 const handleFileChange = (event) => {
   const file = event.target.files[0];
@@ -27,13 +58,16 @@ const handleFileChange = (event) => {
     errors.value.gambar = null;
   } else {
     selectedFile.value = null;
-    errors.value.gambar = 'Harap pilih file gambar yang valid (jpg, png, dll).';
+    if (file) { // Hanya tampilkan error jika pengguna memilih file yang salah
+      errors.value.gambar = 'Harap pilih file gambar yang valid (jpg, png, dll).';
+    }
   }
 };
 
 const handleLocationUpdate = (coords) => {
   newLaporan.value.lat = coords.lat.toFixed(6);
   newLaporan.value.lng = coords.lng.toFixed(6);
+  errors.value.lokasi = null; // Hapus error lokasi jika sudah dipilih
 };
 
 const resetForm = () => {
@@ -43,28 +77,37 @@ const resetForm = () => {
     tanggal: new Date().toISOString().slice(0, 10),
     jenisSatwa: '',
     lokasi: '',
-    lat: '',
-    lng: '',
+    lat: null,
+    lng: null,
     deskripsi: ''
   };
   selectedFile.value = null;
-  const fileInput = document.getElementById('gambar');
-  if (fileInput) {
-    fileInput.value = '';
+  errors.value = {};
+  
+  /**
+   * PERBAIKAN 2: Menggunakan template ref untuk mereset input file.
+   * Ini adalah cara yang lebih direkomendasikan di Vue daripada getElementById.
+   */
+  if (fileInputRef.value) {
+    fileInputRef.value.value = '';
   }
 };
 
-const validateAndSubmit = async () => {
+const validateAndSubmit = () => {
   errors.value = {};
-  if (!newLaporan.value.nama) errors.value.nama = "Nama tidak boleh kosong.";
-  if (!newLaporan.value.telepon) errors.value.telepon = "Telepon tidak boleh kosong.";
-  else if (!/^[0-9]{10,14}$/.test(newLaporan.value.telepon)) errors.value.telepon = "Format nomor telepon tidak valid (10-14 digit).";
+  if (!newLaporan.value.nama.trim()) errors.value.nama = "Nama tidak boleh kosong.";
+  if (!newLaporan.value.telepon.trim()) errors.value.telepon = "Telepon tidak boleh kosong.";
+  /**
+   * PERBAIKAN 3: Validasi nomor telepon yang sedikit lebih baik.
+   * Memastikan nomor diawali '08' dan panjangnya sesuai.
+   */
+  else if (!/^08[0-9]{8,12}$/.test(newLaporan.value.telepon)) errors.value.telepon = "Format nomor telepon tidak valid (contoh: 081234567890).";
   if (!newLaporan.value.tanggal) errors.value.tanggal = "Tanggal tidak boleh kosong.";
   if (!newLaporan.value.jenisSatwa) errors.value.jenisSatwa = "Jenis satwa harus dipilih.";
-  if (!newLaporan.value.lokasi) errors.value.lokasi = "Lokasi tidak boleh kosong.";
-  if (!newLaporan.value.lat || !newLaporan.value.lng) errors.value.lokasi = "Silakan tentukan lokasi di peta.";
-  if (!newLaporan.value.deskripsi) errors.value.deskripsi = "Deskripsi tidak boleh kosong.";
-  if (!selectedFile.value) errors.value.gambar = "Anda harus mengupload gambar kejadian.";
+  if (!newLaporan.value.lokasi.trim()) errors.value.lokasi = "Lokasi tidak boleh kosong.";
+  if (!newLaporan.value.lat || !newLaporan.value.lng) errors.value.lokasiPeta = "Silakan tentukan lokasi di peta.";
+  if (!newLaporan.value.deskripsi.trim()) errors.value.deskripsi = "Deskripsi tidak boleh kosong.";
+  if (!selectedFile.value) errors.value.gambar = "Anda harus mengunggah gambar kejadian.";
   
   if (Object.keys(errors.value).length === 0) {
     submitLaporan();
@@ -73,11 +116,11 @@ const validateAndSubmit = async () => {
 
 const submitLaporan = async () => {
   isSubmitting.value = true;
-  let imageUrl = '';
-
+  submissionStatus.value = { message: '', type: '' };
+  
   try {
-    const CLOUD_NAME = 'drjznlsij';
-    const UPLOAD_PRESET = 'laporan_satwa_unsigned'; 
+    const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'drjznlsij';
+    const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || 'laporan_satwa_unsigned'; 
     
     const formData = new FormData();
     formData.append('file', selectedFile.value);
@@ -89,15 +132,16 @@ const submitLaporan = async () => {
     });
 
     if (!response.ok) {
-      throw new Error('Gagal upload gambar ke Cloudinary. Pastikan Cloud Name dan Upload Preset sudah benar.');
+      const errorData = await response.json();
+      throw new Error(`Gagal upload gambar: ${errorData.error.message}`);
     }
 
-    const data = await response.json();
-    imageUrl = data.secure_url;
+    const cloudinaryData = await response.json();
+    const imageUrl = cloudinaryData.secure_url;
 
     const reportData = {
       ...newLaporan.value,
-      imageUrl: imageUrl,
+      imageUrl,
       status: 'Diterima',
       createdAt: new Date(),
     };
@@ -108,12 +152,13 @@ const submitLaporan = async () => {
     myReportIds.push(docRef.id);
     localStorage.setItem('myReportIds', JSON.stringify(myReportIds));
     
+    submissionStatus.value = { message: 'Laporan berhasil dikirim!', type: 'success' };
     resetForm();
     emit('report-submitted');
 
   } catch (error) {
     console.error("Error submitting report:", error);
-    alert(error.message || 'Gagal mengirim laporan. Silakan coba lagi.');
+    submissionStatus.value = { message: error.message || 'Gagal mengirim laporan. Coba lagi.', type: 'error' };
   } finally {
     isSubmitting.value = false;
   }
@@ -125,7 +170,14 @@ const submitLaporan = async () => {
     <h2 class="text-3xl font-bold mb-2 text-center text-brand-green">Formulir Pengaduan Konflik</h2>
     <p class="text-center text-gray-500 mb-8">Isi formulir di bawah ini dengan data yang akurat.</p>
     
-    <form @submit.prevent="validateAndSubmit">
+    <div v-if="submissionStatus.message" 
+         :class="submissionStatus.type === 'success' ? 'bg-green-100 border-green-400 text-green-700' : 'bg-red-100 border-red-400 text-red-700'"
+         class="border px-4 py-3 rounded-lg relative mb-6" 
+         role="alert">
+      <span class="block sm:inline">{{ submissionStatus.message }}</span>
+    </div>
+    
+    <form @submit.prevent="validateAndSubmit" novalidate>
       <div class="space-y-6">
         <div>
           <label for="nama" class="block text-sm font-semibold text-gray-700 mb-1">Nama Lengkap Pelapor</label>
@@ -166,13 +218,14 @@ const submitLaporan = async () => {
             type="file" 
             @change="handleFileChange" 
             id="gambar" 
+            ref="fileInputRef"
             class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
             :class="{'ring-2 ring-red-500 rounded-lg': errors.gambar}"
             accept="image/png, image/jpeg, image/jpg"
           >
           <p v-if="errors.gambar" class="text-red-600 text-sm mt-1">{{ errors.gambar }}</p>
-          <div v-if="selectedFile" class="mt-4">
-             <img :src="URL.createObjectURL(selectedFile)" alt="Preview Gambar" class="w-1/2 max-w-xs rounded-lg shadow-md">
+          <div v-if="imagePreviewUrl" class="mt-4">
+             <img :src="imagePreviewUrl" alt="Preview Gambar" class="w-1/2 max-w-xs rounded-lg shadow-md">
           </div>
         </div>
 
@@ -185,6 +238,7 @@ const submitLaporan = async () => {
         <div>
           <label class="block text-sm font-semibold text-gray-700 mb-1">Tentukan Lokasi di Peta</label>
           <MapPicker @location-selected="handleLocationUpdate" />
+          <p v-if="errors.lokasiPeta" class="text-red-600 text-sm mt-1">{{ errors.lokasiPeta }}</p>
           <div class="flex space-x-4 mt-2">
             <input type="text" v-model="newLaporan.lat" class="w-1/2 px-4 py-2 border rounded-lg bg-gray-100" readonly placeholder="Latitude">
             <input type="text" v-model="newLaporan.lng" class="w-1/2 px-4 py-2 border rounded-lg bg-gray-100" readonly placeholder="Longitude">
@@ -199,7 +253,7 @@ const submitLaporan = async () => {
       </div>
       
       <div class="mt-8 text-right">
-        <button type="submit" :disabled="isSubmitting" class="bg-gradient-to-r from-brand-green to-brand-green-light text-white font-bold py-3 px-8 rounded-lg hover:shadow-xl transition-all duration-300 shadow-md disabled:bg-gray-400 disabled:cursor-not-allowed">
+        <button type="submit" :disabled="isSubmitting" class="bg-gradient-to-r from-brand-green to-brand-green-light text-white font-bold py-3 px-8 rounded-lg hover:shadow-xl transition-all duration-300 shadow-md disabled:opacity-50 disabled:cursor-not-allowed">
           {{ isSubmitting ? 'Mengirim...' : 'Kirim Laporan' }}
         </button>
       </div>
