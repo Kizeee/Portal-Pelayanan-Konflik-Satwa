@@ -21,10 +21,10 @@ import EditLaporanForm from './components/EditLaporanForm.vue'
 
 const currentPage = ref('home')
 const isLoading = ref(true)
-const user = ref(null)
+const user = ref(null) // Akan berisi data jika admin login
 const laporanList = ref([])
 const selectedReportId = ref(null)
-const myReportIds = ref([]) 
+const myReportIds = ref([])
 const isChatbotOpen = ref(false)
 
 const showNotification = ref(false)
@@ -78,14 +78,18 @@ const handleViewDetail = (reportId) => {
   navigate('detail')
 }
 
+const checkMyReports = () => {
+  myReportIds.value = JSON.parse(localStorage.getItem('myReportIds') || '[]')
+};
+
 const handleReportSubmitted = () => {
   showNotificationModal(
     'success',
     'Laporan Terkirim!',
     'Terima kasih. Laporan Anda telah berhasil kami terima.',
   )
-  myReportIds.value = JSON.parse(localStorage.getItem('myReportIds') || '[]')
-  fetchLaporan()
+  checkMyReports(); 
+  fetchLaporan();
 }
 
 const handleReportUpdated = () => {
@@ -97,13 +101,21 @@ const handleLoginSuccess = () => {
   navigate('dashboard')
 }
 
+// =======================================================
+// --- PERBAIKAN UTAMA ADA DI FUNGSI INI ---
+// =======================================================
 const handleCloseNotification = () => {
   showNotification.value = false
-  if (notification.value.type === 'success') {
-    if (currentPage.value !== 'laporan-saya') {
+  
+  // Navigasi otomatis hanya terjadi jika TIDAK ada admin yang login (!user.value)
+  // dan notifikasinya adalah notifikasi sukses.
+  if (!user.value && notification.value.type === 'success') {
+    // Arahkan pengguna biasa ke halaman "Laporan Saya" setelah mereka berhasil melapor
+    if (currentPage.value === 'lapor') {
       navigate('laporan-saya')
     }
   }
+  // Jika admin yang menutup notifikasi, tidak akan terjadi navigasi otomatis.
 }
 
 const handleEditReport = async (laporanId) => {
@@ -141,7 +153,7 @@ onMounted(() => {
   onAuthStateChanged(auth, (currentUser) => {
     user.value = currentUser
   })
-  myReportIds.value = JSON.parse(localStorage.getItem('myReportIds') || '[]')
+  checkMyReports()
   fetchLaporan()
 })
 </script>
@@ -181,7 +193,9 @@ onMounted(() => {
           v-if="currentPage === 'detail'"
           :report="selectedReport"
           :user="user"
-          @navigate-back="navigate('lihat')"
+          
+          @navigate-back="user ? navigate('lihat') : navigate('laporan-saya')"
+          
           @report-updated="handleReportUpdated"
         />
         <LoginPage v-if="currentPage === 'login'" @login-success="handleLoginSuccess" />
