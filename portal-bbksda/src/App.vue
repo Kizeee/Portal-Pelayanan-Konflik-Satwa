@@ -4,11 +4,14 @@ import { auth, db } from './firebase'
 import { onAuthStateChanged } from 'firebase/auth'
 import { collection, getDocs, query, doc, getDoc, updateDoc } from 'firebase/firestore'
 
+// Import komponen
 import Header from './components/Header.vue'
 import Footer from './components/Footer.vue'
 import NotificationModal from './components/NotificationModal.vue'
 import Chatbot from './components/Chatbot.vue'
+import EditLaporanForm from './components/EditLaporanForm.vue'
 
+// Import halaman/views
 import HomePage from './views/HomePage.vue'
 import PetaPage from './views/PetaPage.vue'
 import LaporPage from './views/LaporPage.vue'
@@ -17,22 +20,27 @@ import DetailPage from './views/DetailPage.vue'
 import LoginPage from './views/LoginPage.vue'
 import DashboardPage from './views/DashboardPage.vue'
 import LaporanSayaPage from './views/LaporanSayaPage.vue'
-import EditLaporanForm from './components/EditLaporanForm.vue'
+import RekapBulananPage from './views/RekapBulananPage.vue'
 
+
+// State utama aplikasi
 const currentPage = ref('home')
 const isLoading = ref(true)
-const user = ref(null) // Akan berisi data jika admin login
+const user = ref(null)
 const laporanList = ref([])
 const selectedReportId = ref(null)
 const myReportIds = ref([])
 const isChatbotOpen = ref(false)
 
+// State untuk notifikasi
 const showNotification = ref(false)
 const notification = ref({ type: '', title: '', message: '' })
 
+// State untuk modal edit
 const showEditModal = ref(false)
 const laporanUntukDiedit = ref(null)
 
+// Computed properties
 const reportsWithCoords = computed(() => {
   return laporanList.value.filter((laporan) => laporan.lat && laporan.lng)
 })
@@ -46,11 +54,13 @@ const myReports = computed(() => {
   return laporanList.value.filter((report) => myReportIds.value.includes(report.id))
 })
 
+// Fungsi navigasi utama
 const navigate = (page) => {
   currentPage.value = page
   window.scrollTo(0, 0)
 }
 
+// Mengambil semua laporan dari Firestore
 const fetchLaporan = async () => {
   isLoading.value = true
   try {
@@ -101,21 +111,11 @@ const handleLoginSuccess = () => {
   navigate('dashboard')
 }
 
-// =======================================================
-// --- PERBAIKAN UTAMA ADA DI FUNGSI INI ---
-// =======================================================
 const handleCloseNotification = () => {
   showNotification.value = false
-  
-  // Navigasi otomatis hanya terjadi jika TIDAK ada admin yang login (!user.value)
-  // dan notifikasinya adalah notifikasi sukses.
-  if (!user.value && notification.value.type === 'success') {
-    // Arahkan pengguna biasa ke halaman "Laporan Saya" setelah mereka berhasil melapor
-    if (currentPage.value === 'lapor') {
+  if (!user.value && notification.value.type === 'success' && currentPage.value === 'lapor') {
       navigate('laporan-saya')
-    }
   }
-  // Jika admin yang menutup notifikasi, tidak akan terjadi navigasi otomatis.
 }
 
 const handleEditReport = async (laporanId) => {
@@ -126,11 +126,9 @@ const handleEditReport = async (laporanId) => {
       laporanUntukDiedit.value = { id: reportSnap.id, ...reportSnap.data() }
       showEditModal.value = true
     } else {
-      console.error('Laporan tidak ditemukan untuk diedit.')
       showNotificationModal('error', 'Gagal', 'Laporan yang ingin Anda edit tidak ditemukan.')
     }
   } catch (error) {
-    console.error('Error mengambil data laporan untuk diedit:', error)
     showNotificationModal('error', 'Error', 'Gagal mengambil data laporan.')
   }
 }
@@ -144,11 +142,11 @@ const handleSaveChanges = async (updatedData) => {
     showEditModal.value = false
     showNotificationModal('success', 'Berhasil', 'Laporan berhasil diperbarui.')
   } catch (error) {
-    console.error('Gagal memperbarui laporan:', error)
     showNotificationModal('error', 'Gagal', 'Terjadi kesalahan saat menyimpan perubahan.')
   }
 }
 
+// Lifecycle hook saat aplikasi dimuat
 onMounted(() => {
   onAuthStateChanged(auth, (currentUser) => {
     user.value = currentUser
@@ -174,7 +172,11 @@ onMounted(() => {
       </div>
       <template v-else>
         <HomePage v-if="currentPage === 'home'" @navigate="navigate" />
-        <DashboardPage v-if="currentPage === 'dashboard'" :reports="laporanList" />
+        <DashboardPage 
+          v-if="currentPage === 'dashboard'" 
+          :reports="laporanList" 
+          @navigate="navigate"
+        />
         <PetaPage v-if="currentPage === 'peta'" :reports="reportsWithCoords" />
         <LaporPage v-if="currentPage === 'lapor'" @report-submitted="handleReportSubmitted" />
         <LihatLaporanPage
@@ -193,12 +195,15 @@ onMounted(() => {
           v-if="currentPage === 'detail'"
           :report="selectedReport"
           :user="user"
-          
           @navigate-back="user ? navigate('lihat') : navigate('laporan-saya')"
-          
           @report-updated="handleReportUpdated"
         />
         <LoginPage v-if="currentPage === 'login'" @login-success="handleLoginSuccess" />
+        
+        <RekapBulananPage 
+          v-if="currentPage === 'rekap-bulanan'"
+          @navigate-back="navigate('dashboard')"
+        />
       </template>
     </main>
 
