@@ -257,12 +257,6 @@ const submitLaporan = async () => {
             </div>
           </div>
         </div>
-
-        <div>
-          <label for="lokasi" class="block text-sm font-semibold text-gray-700 mb-1">Lokasi Kejadian (Desa/Kecamatan)</label>
-          <input type="text" v-model="newLaporan.lokasi" id="lokasi" class="w-full px-4 py-2 border rounded-lg" :class="{ 'border-red-500': errors.lokasi }" placeholder="Contoh: Desa Sialang, Kec. Pangkalan Kuras" />
-          <p v-if="errors.lokasi" class="text-red-600 text-sm mt-1">{{ errors.lokasi }}</p>
-        </div>
         <div>
           <label class="block text-sm font-semibold text-gray-700 mb-1">Tentukan Lokasi di Peta</label>
           <MapPicker @location-selected="handleLocationUpdate" />

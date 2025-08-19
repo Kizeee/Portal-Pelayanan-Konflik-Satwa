@@ -2,17 +2,15 @@
 import { ref, computed, onMounted } from 'vue';
 import { collection, getDocs, query } from 'firebase/firestore';
 import { db } from '../firebase';
-import { useRouter } from 'vue-router'; // 1. Impor useRouter
+import { useRouter } from 'vue-router';
 import StatCard from '../components/charts/StatCard.vue';
 import BarChart from '../components/charts/BarChart.vue';
 
-// --- STATE MANAGEMENT ---
 const allReports = ref([]);
 const isLoading = ref(true);
 const selectedMonth = ref(new Date().toISOString().slice(0, 7));
-const router = useRouter(); // 2. Inisialisasi router
+const router = useRouter(); 
 
-// --- DATA FETCHING ---
 onMounted(async () => {
   try {
     const q = query(collection(db, 'laporan'));
@@ -29,7 +27,6 @@ onMounted(async () => {
   }
 });
 
-// --- COMPUTED PROPERTIES ---
 const filteredReports = computed(() => {
   if (!selectedMonth.value || allReports.value.length === 0) {
     return [];
@@ -79,14 +76,8 @@ const satwaChartData = computed(() => {
   };
 });
 
-// --- METHODS ---
 const printReport = () => {
   window.print();
-};
-
-// 3. Buat fungsi untuk kembali
-const goBack = () => {
-  router.back();
 };
 
 const formatMonth = (month) => {

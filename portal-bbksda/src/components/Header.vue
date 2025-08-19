@@ -41,7 +41,7 @@ const handleLogout = async () => {
         </div>
         
         <div class="hidden md:flex items-center space-x-8">
-          <a href="#" @click.prevent="emit('navigate', 'home')" :class="navLinkClass('home')">Home</a>
+          
           
           <template v-if="user">
             <a href="#" @click.prevent="emit('navigate', 'dashboard')" :class="navLinkClass('dashboard')">Statistik</a>
@@ -51,6 +51,7 @@ const handleLogout = async () => {
           </template>
           
           <template v-else>
+            <a href="#" @click.prevent="emit('navigate', 'home')" :class="navLinkClass('home')">Home</a>
             <a href="#" @click.prevent="emit('navigate', 'lapor')" :class="navLinkClass('lapor')">Buat Laporan</a>
             <a v-if="hasMyReports" href="#" @click.prevent="emit('navigate', 'laporan-saya')" :class="navLinkClass('laporan-saya')">Laporan Saya</a>
             <a href="#" @click.prevent="emit('navigate', 'login')" :class="navLinkClass('login')">Login Admin</a>
@@ -66,7 +67,7 @@ const handleLogout = async () => {
     </nav>
 
     <div v-show="mobileMenuOpen" class="md:hidden bg-white border-t">
-      <a href="#" @click.prevent="navigateAndClose('home')" class="block py-3 px-4 text-base font-medium text-gray-600 hover:bg-gray-50">Home</a>
+      
       
       <template v-if="user">
         <a href="#" @click.prevent="navigateAndClose('dashboard')" class="block py-3 px-4 text-base font-medium text-gray-600 hover:bg-gray-50">Statistik</a>
@@ -76,6 +77,7 @@ const handleLogout = async () => {
       </template>
       
       <template v-else>
+        <a href="#" @click.prevent="navigateAndClose('home')" class="block py-3 px-4 text-base font-medium text-gray-600 hover:bg-gray-50">Home</a>
         <a href="#" @click.prevent="navigateAndClose('lapor')" class="block py-3 px-4 text-base font-medium text-gray-600 hover:bg-gray-50">Buat Laporan</a>
         <a v-if="hasMyReports" href="#" @click.prevent="navigateAndClose('laporan-saya')" class="block py-3 px-4 text-base font-medium text-gray-600 hover:bg-gray-50">Laporan Saya</a>
         <a href="#" @click.prevent="navigateAndClose('login')" class="block py-3 px-4 text-base font-medium text-gray-600 hover:bg-gray-50">Login Admin</a>
