@@ -8,10 +8,8 @@ const props = defineProps({
   reports: Array,
 });
 
-// --- PERBAIKAN: Tambahkan emit untuk navigasi ---
 const emit = defineEmits(['navigate']);
 
-// Sisa dari <script setup> Anda sudah sempurna dan tidak perlu diubah.
 const totalLaporan = computed(() => props.reports.length);
 const laporanDiproses = computed(() => props.reports.filter(r => r.status === 'Diproses').length);
 const laporanSelesai = computed(() => props.reports.filter(r => r.status === 'Selesai').length);

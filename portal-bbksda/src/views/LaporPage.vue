@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onUnmounted } from 'vue';
-import { collection, addDoc } from 'firebase/firestore';
+import { collection, addDoc, getDocs, query, orderBy, limit, doc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import MapPicker from '../components/MapPicker.vue';
 
@@ -17,6 +17,7 @@ const newLaporan = ref({
   lat: null,
   lng: null,
   deskripsi: '',
+  idLaporan: '', // Tambahkan state untuk idLaporan
 });
 const errors = ref({});
 
@@ -24,6 +25,28 @@ const errors = ref({});
 const selectedFiles = ref([]);       // Menampung semua file (gambar dan video)
 const previewUrls = ref([]);         // Menampung URL preview beserta tipenya
 const fileInputRef = ref(null);
+
+// --- Fungsi untuk mendapatkan ID Laporan terakhir ---
+const getLastLaporanId = async () => {
+  const q = query(collection(db, 'laporan'), orderBy('idLaporan', 'desc'), limit(1));
+  const querySnapshot = await getDocs(q);
+  if (!querySnapshot.empty) {
+    const lastDoc = querySnapshot.docs[0];
+    return lastDoc.data().idLaporan;
+  }
+  return null;
+};
+
+// --- Fungsi untuk generate ID Laporan baru ---
+const generateNewLaporanId = async () => {
+  const lastId = await getLastLaporanId();
+  if (lastId) {
+    const lastNumber = parseInt(lastId.replace('LP', ''), 10);
+    const newNumber = lastNumber + 1;
+    return `LP${newNumber.toString().padStart(3, '0')}`;
+  }
+  return 'LP001';
+};
 
 // --- PERUBAHAN #2: Fungsi untuk menangani input gambar dan video ---
 const handleFileChange = (event) => {
@@ -40,7 +63,7 @@ const handleFileChange = (event) => {
     fileInputRef.value.value = ''; // Reset input
     return;
   }
-  
+
   // Validasi: Batasi jumlah gambar (misal: maks 5)
   const imageFiles = files.filter(file => file.type.startsWith('image/'));
   if (imageFiles.length > 5) {
@@ -80,6 +103,7 @@ const resetForm = () => {
     lat: null,
     lng: null,
     deskripsi: '',
+    idLaporan: '',
   };
   selectedFiles.value = [];
   previewUrls.value = [];
@@ -118,7 +142,7 @@ const submitLaporan = async () => {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('upload_preset', UPLOAD_PRESET);
-      
+
       // Tentukan tipe resource (image/video) untuk Cloudinary
       const resourceType = file.type.startsWith('video/') ? 'video' : 'image';
       const apiUrl = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${resourceType}/upload`;
@@ -138,9 +162,13 @@ const submitLaporan = async () => {
     const imageUrls = uploadResults
       .filter(result => result.resource_type === 'image')
       .map(result => result.secure_url);
-      
+
     const videoUrl = uploadResults
       .find(result => result.resource_type === 'video')?.secure_url || null;
+
+    // Generate ID Laporan baru
+    const newId = await generateNewLaporanId();
+    newLaporan.value.idLaporan = newId;
 
     // Siapkan data untuk disimpan ke Firestore
     const reportData = {
@@ -151,10 +179,12 @@ const submitLaporan = async () => {
       createdAt: new Date(),
     };
 
-    const docRef = await addDoc(collection(db, 'laporan'), reportData);
+    // Gunakan setDoc dengan ID kustom
+    const docRef = doc(db, 'laporan', newId);
+    await setDoc(docRef, reportData);
 
     const myReportIds = JSON.parse(localStorage.getItem('myReportIds') || '[]');
-    myReportIds.push(docRef.id);
+    myReportIds.push(newId);
     localStorage.setItem('myReportIds', JSON.stringify(myReportIds));
 
     resetForm();
