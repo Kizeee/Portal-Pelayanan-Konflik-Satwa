@@ -13,11 +13,11 @@ const newLaporan = ref({
   telepon: '',
   tanggal: new Date().toISOString().slice(0, 10),
   jenisSatwa: '',
-  lokasi: '',
+  lokasi: '', // Field ini yang akan diisi oleh input baru
   lat: null,
   lng: null,
   deskripsi: '',
-  idLaporan: '', // Tambahkan state untuk idLaporan
+  idLaporan: '',
 });
 const errors = ref({});
 
@@ -90,7 +90,10 @@ onUnmounted(() => {
 const handleLocationUpdate = (coords) => {
   newLaporan.value.lat = coords.lat.toFixed(6);
   newLaporan.value.lng = coords.lng.toFixed(6);
-  errors.value.lokasi = null;
+  // Hapus error lokasi peta jika ada, karena peta sudah dipilih
+  if (errors.value.lokasiPeta) {
+    errors.value.lokasiPeta = null;
+  }
 };
 
 const resetForm = () => {
@@ -120,9 +123,17 @@ const validateAndSubmit = () => {
   else if (!/^08[0-9]{8,12}$/.test(newLaporan.value.telepon))
     errors.value.telepon = 'Format nomor telepon tidak valid (contoh: 081234567890).';
   if (!newLaporan.value.jenisSatwa) errors.value.jenisSatwa = 'Jenis satwa harus dipilih.';
-  if (!newLaporan.value.lokasi.trim()) errors.value.lokasi = 'Lokasi tidak boleh kosong.';
+  
+  // Validasi field lokasi yang baru ditambahkan
+  if (!newLaporan.value.lokasi.trim()) errors.value.lokasi = 'Detail lokasi tidak boleh kosong.';
+  
   if (selectedFiles.value.length === 0)
     errors.value.gambar = 'Anda harus mengunggah setidaknya satu gambar atau video.';
+  
+  // Validasi tambahan untuk memastikan peta sudah dipilih
+  if (newLaporan.value.lat === null || newLaporan.value.lng === null) {
+      errors.value.lokasiPeta = 'Silakan tentukan titik lokasi di peta.';
+  }
 
   if (Object.keys(errors.value).length === 0) {
     submitLaporan();
@@ -236,6 +247,11 @@ const submitLaporan = async () => {
           <p v-if="errors.jenisSatwa" class="text-red-600 text-sm mt-1">{{ errors.jenisSatwa }}</p>
         </div>
 
+        <div>
+          <label for="lokasi" class="block text-sm font-semibold text-gray-700 mb-1">Detail Lokasi (Nama Jalan/Desa/Kecamatan)</label>
+          <input type="text" v-model="newLaporan.lokasi" id="lokasi" class="w-full px-4 py-2 border rounded-lg" :class="{ 'border-red-500': errors.lokasi }" placeholder="Contoh: Jl. Merdeka, Desa Rimba, Kec. Hutan" />
+          <p v-if="errors.lokasi" class="text-red-600 text-sm mt-1">{{ errors.lokasi }}</p>
+        </div>
         <div>
           <label for="gambar" class="block text-sm font-semibold text-gray-700 mb-1">Upload Foto & Video (Maks. 5 Foto & 1 Video)</label>
           <input
