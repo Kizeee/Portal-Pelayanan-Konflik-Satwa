@@ -1,25 +1,32 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import { collection, getDocs, query } from 'firebase/firestore';
 import { db } from '../firebase';
-import { useRouter } from 'vue-router';
 import StatCard from '../components/charts/StatCard.vue';
 import BarChart from '../components/charts/BarChart.vue';
 
 const allReports = ref([]);
 const isLoading = ref(true);
 const selectedMonth = ref(new Date().toISOString().slice(0, 7));
-const router = useRouter(); 
+const rekapRef = ref(null);
 
 onMounted(async () => {
   try {
     const q = query(collection(db, 'laporan'));
     const querySnapshot = await getDocs(q);
-    allReports.value = querySnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-      createdAt: doc.data().createdAt.toDate ? doc.data().createdAt.toDate() : new Date(doc.data().createdAt),
-    }));
+    allReports.value = querySnapshot.docs.map(doc => {
+      const data = doc.data();
+      // Safely convert createdAt regardless of Firestore Timestamp or plain value
+      let createdAt = null;
+      if (data.createdAt) {
+        createdAt = data.createdAt.toDate
+          ? data.createdAt.toDate()
+          : new Date(data.createdAt);
+      }
+      return { id: doc.id, ...data, createdAt };
+    });
   } catch (error) {
     console.error("Error fetching reports: ", error);
   } finally {
@@ -28,36 +35,39 @@ onMounted(async () => {
 });
 
 const filteredReports = computed(() => {
-  if (!selectedMonth.value || allReports.value.length === 0) {
-    return [];
-  }
+  if (!selectedMonth.value) return [];
   const [year, month] = selectedMonth.value.split('-').map(Number);
-  
+
   return allReports.value.filter(report => {
-    const reportDate = new Date(report.createdAt);
-    return reportDate.getFullYear() === year && (reportDate.getMonth() + 1) === month;
+    if (!report.createdAt) return false;
+    // createdAt is already a JS Date from onMounted
+    return report.createdAt.getFullYear() === year &&
+           (report.createdAt.getMonth() + 1) === month;
   });
 });
 
 const reportStats = computed(() => {
   const reports = filteredReports.value;
   const total = reports.length;
+
   const statusCounts = reports.reduce((acc, report) => {
     acc[report.status] = (acc[report.status] || 0) + 1;
     return acc;
   }, {});
   
   const satwaCounts = reports.reduce((acc, report) => {
-    acc[report.jenisSatwa] = (acc[report.jenisSatwa] || 0) + 1;
+    const key = report.jenisSatwa || 'Tidak Diketahui';
+    acc[key] = (acc[key] || 0) + 1;
     return acc;
   }, {});
 
   return {
     total,
-    diterima: statusCounts['Diterima'] || 0,
-    diproses: statusCounts['Diproses'] || 0,
+    pending: statusCounts['Menunggu Verifikasi'] || statusCounts['pending'] || 0,
+    verified: statusCounts['Diterima'] || statusCounts['verified'] || 0,
+    diproses: statusCounts['Penanganan di Lokasi'] || statusCounts['Diproses'] || 0,
     selesai: statusCounts['Selesai'] || 0,
-    tidakValid: statusCounts['Tidak Valid'] || 0,
+    tidakValid: statusCounts['Ditolak'] || statusCounts['Tidak Valid'] || 0,
     satwa: satwaCounts,
   };
 });
@@ -76,8 +86,37 @@ const satwaChartData = computed(() => {
   };
 });
 
-const printReport = () => {
-  window.print();
+const downloadPdf = async () => {
+  if (!rekapRef.value) return;
+
+  const canvas = await html2canvas(rekapRef.value, {
+    scale: 2,
+    useCORS: true,
+    logging: false,
+  });
+
+  const imgData = canvas.toDataURL('image/png');
+  const pdf = new jsPDF('p', 'mm', 'a4');
+  const pageWidth = pdf.internal.pageSize.getWidth();
+  const pageHeight = pdf.internal.pageSize.getHeight();
+  const margin = 10;
+  const imgWidth = pageWidth - margin * 2;
+  const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+  let heightLeft = imgHeight;
+  let position = margin;
+
+  pdf.addImage(imgData, 'PNG', margin, position, imgWidth, imgHeight);
+  heightLeft -= pageHeight - margin * 2;
+
+  while (heightLeft > 0) {
+    position = heightLeft - imgHeight + margin;
+    pdf.addPage();
+    pdf.addImage(imgData, 'PNG', margin, position, imgWidth, imgHeight);
+    heightLeft -= pageHeight - margin * 2;
+  }
+
+  pdf.save(`rekap-konflik-${selectedMonth.value || 'periode'}.pdf`);
 };
 
 const formatMonth = (month) => {
@@ -100,8 +139,8 @@ const formatMonth = (month) => {
           v-model="selectedMonth"
           class="px-4 py-2 border rounded-lg focus:ring-brand-green-light focus:border-brand-green-light"
         />
-        <button @click="printReport" class="bg-brand-green text-white font-bold py-2 px-6 rounded-lg hover:shadow-lg transition-shadow">
-          Cetak
+        <button @click="downloadPdf" class="bg-brand-green text-white font-bold py-2 px-6 rounded-lg hover:shadow-lg transition-shadow">
+          Unduh PDF
         </button>
       </div>
     </div>
@@ -110,19 +149,24 @@ const formatMonth = (month) => {
       <p class="text-gray-500">Memuat data...</p>
     </div>
 
-    <div v-else id="printable-area">
-      <div class="text-center mb-8 hidden print:block">
-        <h2 class="text-2xl font-bold">Laporan Bulanan Konflik Satwa</h2>
-        <h3 class="text-xl">{{ formatMonth(selectedMonth) }}</h3>
+    <div v-else id="printable-area" ref="rekapRef" class="bg-white p-6 rounded-xl shadow-md">
+      <div class="flex items-center gap-4 border-b pb-4 mb-6">
+        <img src="/logo-BBKSDA.png" alt="Logo BBKSDA Riau" class="w-16 h-16 object-contain">
+        <div>
+          <p class="text-xs uppercase tracking-wide text-gray-500">Kementerian Lingkungan Hidup dan Kehutanan</p>
+          <h2 class="text-2xl font-bold text-gray-800 leading-tight">Balai Besar KSDA Riau</h2>
+          <p class="text-sm text-gray-600">Rekapitulasi Konflik Satwa - {{ formatMonth(selectedMonth) }}</p>
+        </div>
       </div>
       
       <div v-if="filteredReports.length > 0">
         <!-- Statistik Utama -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <StatCard title="Total Laporan" :value="reportStats.total" />
-          <StatCard title="Diterima" :value="reportStats.diterima" color="blue" />
-          <StatCard title="Diproses" :value="reportStats.diproses" color="yellow" />
-          <StatCard title="Selesai" :value="reportStats.selesai" color="green" />
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
+          <StatCard title="Total Laporan" :value="reportStats.total" color="bg-primary-500" />
+          <StatCard title="Menunggu Verifikasi" :value="reportStats.pending" color="bg-yellow-500" />
+          <StatCard title="Diterima" :value="reportStats.verified" color="bg-emerald-500" />
+          <StatCard title="Penanganan di Lokasi" :value="reportStats.diproses" color="bg-blue-500" />
+          <StatCard title="Selesai" :value="reportStats.selesai" color="bg-green-500" />
         </div>
 
         <!-- Grafik dan Tabel -->
@@ -139,6 +183,7 @@ const formatMonth = (month) => {
                   <tr>
                     <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
                     <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Satwa</th>
+                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Kategori</th>
                     <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                   </tr>
                 </thead>
@@ -146,6 +191,7 @@ const formatMonth = (month) => {
                   <tr v-for="report in filteredReports" :key="report.id">
                     <td class="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">{{ report.idLaporan }}</td>
                     <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{{ report.jenisSatwa }}</td>
+                    <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{{ report.kategoriKonflik || '-' }}</td>
                     <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{{ report.status }}</td>
                   </tr>
                 </tbody>

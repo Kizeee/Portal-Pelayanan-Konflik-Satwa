@@ -1,20 +1,29 @@
+import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { VitePWA } from 'vite-plugin-pwa'
-import basicSsl from '@vitejs/plugin-basic-ssl'
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
+    },
+  },
   plugins: [
     vue(),
     VitePWA({
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.js',
       registerType: 'autoUpdate',
       devOptions: {
-        enabled: true
+        enabled: true,
+        type: 'module',
       },
-      workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,jpg,jpeg}']
+      injectManifest: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,jpg,jpeg}'],
       },
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'hero-bg.png'],
+      includeAssets: ['favicon.ico', 'logo-bbksda-512.png', 'pwa-192x192.png'],
       manifest: {
         name: 'Portal Laporan Satwa BBKSDA Riau',
         short_name: 'Lapor Satwa',
@@ -23,7 +32,7 @@ export default defineConfig({
         background_color: '#F7F9F9',
         icons: [
           {
-            src: '/logo-bbksda-512.png',
+            src: '/pwa-192x192.png',
             sizes: '192x192',
             type: 'image/png'
           },
@@ -41,6 +50,5 @@ export default defineConfig({
         ]
       }
     }),
-    basicSsl()
   ],
 })

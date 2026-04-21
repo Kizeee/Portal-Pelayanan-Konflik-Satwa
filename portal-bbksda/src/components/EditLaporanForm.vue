@@ -9,13 +9,22 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['close-modal', 'save-changes']);
+const konflikOptions = [
+  'Memasuki permukiman',
+  'Menyerang manusia',
+  'Menyerang ternak',
+  'Merusak tanaman/kebun',
+  'Ditemukan mati/terluka',
+  'Lainnya',
+];
 const form = ref({
   nama: '',
   telepon: '',
   tanggal: '',
   jenisSatwa: '',
   lokasi: '',
-  deskripsi: ''
+  deskripsi: '',
+  kategoriKonflik: ''
 });
 
 watch(() => props.laporanToEdit, (newLaporan) => {
@@ -24,13 +33,14 @@ watch(() => props.laporanToEdit, (newLaporan) => {
     form.value.telepon = newLaporan.telepon || '';
     form.value.tanggal = newLaporan.tanggal ? new Date(newLaporan.tanggal).toISOString().slice(0, 10) : '';
     form.value.jenisSatwa = newLaporan.jenisSatwa || '';
+    form.value.kategoriKonflik = newLaporan.kategoriKonflik || '';
     form.value.lokasi = newLaporan.lokasi || '';
     form.value.deskripsi = newLaporan.deskripsi || '';
   }
 }, { immediate: true, deep: true });
 
 const handleSubmit = () => {
-  if (!form.value.nama.trim() || !form.value.telepon.trim() || !form.value.jenisSatwa.trim() || !form.value.lokasi.trim()) {
+  if (!form.value.nama.trim() || !form.value.telepon.trim() || !form.value.jenisSatwa.trim() || !form.value.kategoriKonflik.trim() || !form.value.lokasi.trim()) {
     alert('Mohon isi semua field yang wajib diisi.');
     return;
   }
@@ -90,8 +100,20 @@ const handleSubmit = () => {
             <option>Harimau Sumatera</option>
             <option>Beruang Madu</option>
             <option>Buaya</option>
-            <option>Monyet/Kera</option>
             <option>Lainnya</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="edit-kategori-konflik" class="block text-sm font-medium text-gray-700">Kategori Konflik</label>
+          <select 
+            v-model="form.kategoriKonflik" 
+            id="edit-kategori-konflik" 
+            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-brand-accent focus:border-brand-accent" 
+            required
+          >
+            <option disabled value="">Pilih kategori konflik</option>
+            <option v-for="opsi in konflikOptions" :key="`edit-kategori-${opsi}`">{{ opsi }}</option>
           </select>
         </div>
         

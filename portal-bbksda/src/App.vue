@@ -1,257 +1,173 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'
-import { auth, db } from './firebase'
-import { onAuthStateChanged } from 'firebase/auth'
-import { collection, getDocs, query, doc, getDoc, updateDoc } from 'firebase/firestore'
+import { onMounted, watch } from 'vue'
+import { useAuthStore } from './stores/auth'
+import { useReportsStore } from './stores/reports'
+import { useUIStore } from './stores/ui'
+import { useNotificationsStore } from './stores/notifications'
+import { useReporterNotificationsStore } from './stores/reporterNotifications'
+import { useReports } from './composables/useReports'
 
 import Header from './components/Header.vue'
 import Footer from './components/Footer.vue'
 import NotificationModal from './components/NotificationModal.vue'
-import Chatbot from './components/Chatbot.vue'
+import ToastNotification from './components/ToastNotification.vue'
+import ReporterToastNotification from './components/ReporterToastNotification.vue'
+
 import EditLaporanForm from './components/EditLaporanForm.vue'
+import ReloadPrompt from './components/ReloadPrompt.vue'
 
-import HomePage from './views/HomePage.vue'
-import PetaPage from './views/PetaPage.vue'
-import LaporPage from './views/LaporPage.vue'
-import LihatLaporanPage from './views/LihatLaporanPage.vue'
-import DetailPage from './views/DetailPage.vue'
-import LoginPage from './views/LoginPage.vue'
-import DashboardPage from './views/DashboardPage.vue'
-import LaporanSayaPage from './views/LaporanSayaPage.vue'
-import RekapBulananPage from './views/RekapBulananPage.vue'
+// Stores
+const authStore = useAuthStore()
+const reportsStore = useReportsStore()
+const uiStore = useUIStore()
+const notifStore = useNotificationsStore()
+const reporterNotifStore = useReporterNotificationsStore()
 
-const currentPage = ref('home')
-const isLoading = ref(true)
-const user = ref(null)
-const laporanList = ref([])
-const selectedReportId = ref(null)
-const myReportIds = ref([])
-const isChatbotOpen = ref(false)
+// Composables
+const { updateReport } = useReports()
 
-const showNotification = ref(false)
-const notification = ref({ type: '', title: '', message: '' })
+// Initialize stores on mount
+onMounted(async () => {
+  authStore.initAuth()
+  await reportsStore.initialize()
 
-const showEditModal = ref(false)
-const laporanUntukDiedit = ref(null)
-
-const reportsWithCoords = computed(() => {
-  return laporanList.value.filter((laporan) => laporan.lat && laporan.lng)
-})
-
-const selectedReport = computed(() => {
-  if (!selectedReportId.value) return null
-  return laporanList.value.find((r) => r.id === selectedReportId.value) || null
-})
-
-const myReports = computed(() => {
-  return laporanList.value.filter((report) => myReportIds.value.includes(report.id))
-})
-
-const navigate = (page) => {
-  currentPage.value = page
-  window.scrollTo(0, 0)
-}
-
-const fetchLaporan = async () => {
-  isLoading.value = true
-  try {
-    const q = query(collection(db, 'laporan'))
-    const querySnapshot = await getDocs(q)
-    const reports = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
-    laporanList.value = reports.sort(
-      (a, b) => (b.createdAt?.toDate() || 0) - (a.createdAt?.toDate() || 0),
-    )
-  } catch (error) {
-    console.error('Error fetching reports: ', error)
-    showNotificationModal('error', 'Gagal Memuat Data', 'Tidak dapat mengambil data dari server.')
-  } finally {
-    isLoading.value = false
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.addEventListener('message', async (event) => {
+      if (event.data?.type === 'OFFLINE_REPORT_SYNCED' && event.data.reportId) {
+        if (!reportsStore.myReportIds.includes(event.data.reportId)) {
+          reportsStore.myReportIds.push(event.data.reportId)
+          localStorage.setItem('myReportIds', JSON.stringify(reportsStore.myReportIds))
+        }
+        await reportsStore.loadReports()
+        // Also start watching this new report for status updates
+        reporterNotifStore.watchReport(event.data.reportId)
+      }
+    })
   }
-}
 
-const showNotificationModal = (type, title, message) => {
-  notification.value = { type, title, message }
-  showNotification.value = true
-}
-
-const handleViewDetail = (reportId) => {
-  selectedReportId.value = reportId
-  navigate('detail')
-}
-
-const checkMyReports = () => {
-  myReportIds.value = JSON.parse(localStorage.getItem('myReportIds') || '[]')
-}
-
-const handleReportSubmitted = () => {
-  showNotificationModal(
-    'success',
-    'Laporan Terkirim!',
-    'Terima kasih. Laporan Anda telah berhasil kami terima.',
-  )
-  checkMyReports()
-  fetchLaporan()
-}
-
-const handleReportUpdated = () => {
-  showNotificationModal('success', 'Status Diperbarui', 'Status laporan telah berhasil diubah.')
-  fetchLaporan()
-}
-
-const handleLoginSuccess = () => {
-  navigate('dashboard')
-}
-
-const handleCloseNotification = () => {
-  showNotification.value = false
-  if (!user.value && notification.value.type === 'success' && currentPage.value === 'lapor') {
-    navigate('laporan-saya')
+  // Mulai memantau laporan warga setelah data selesai dimuat
+  // Pastikan tidak menjalankan untuk admin yang sudah login
+  if (!authStore.user && reportsStore.myReportIds.length > 0) {
+    reporterNotifStore.startWatching(reportsStore.myReportIds)
   }
-}
+})
 
-const handleEditReport = async (laporanId) => {
-  try {
-    const reportRef = doc(db, 'laporan', laporanId)
-    const reportSnap = await getDoc(reportRef)
-    if (reportSnap.exists()) {
-      laporanUntukDiedit.value = { id: reportSnap.id, ...reportSnap.data() }
-      showEditModal.value = true
+// Watch auth state: start/stop real-time notification listener
+watch(
+  () => authStore.user,
+  (user) => {
+    if (user) {
+      // Admin logged in -> start listening for new reports
+      notifStore.setOnNewReportCallback(() => {
+        reportsStore.loadReports()
+      })
+      notifStore.startListening()
+      // Stop reporter listener when admin logs in
+      reporterNotifStore.stopAll()
     } else {
-      showNotificationModal('error', 'Gagal', 'Laporan yang ingin Anda edit tidak ditemukan.')
+      // Admin logged out -> stop listening and clear notifications
+      notifStore.stopListening()
+      notifStore.clearAll()
+      // Restart reporter watcher after logout if there are saved report IDs
+      if (reportsStore.myReportIds.length > 0) {
+        reporterNotifStore.startWatching(reportsStore.myReportIds)
+      }
     }
-  } catch (error) {
-    showNotificationModal('error', 'Error', 'Gagal mengambil data laporan.')
-  }
+  },
+  { immediate: false },
+)
+
+// Watch reporter's report IDs: start watching newly submitted reports
+watch(
+  () => reportsStore.myReportIds,
+  (newIds, oldIds) => {
+    if (!authStore.user && newIds.length > 0) {
+      // Find any new report IDs that weren't previously watched
+      const previousIds = new Set(oldIds || [])
+      const brandNewIds = newIds.filter((id) => !previousIds.has(id))
+      brandNewIds.forEach((id) => reporterNotifStore.watchReport(id))
+    }
+  },
+  { deep: true },
+)
+
+// Handlers
+const handleCloseNotification = () => {
+  uiStore.hideNotification()
 }
 
 const handleSaveChanges = async (updatedData) => {
-  if (!laporanUntukDiedit.value) return
-  const reportRef = doc(db, 'laporan', laporanUntukDiedit.value.id)
+  const reportId = uiStore.editModal.reportData?.id
+  if (!reportId) return
+
   try {
-    await updateDoc(reportRef, updatedData)
-    await fetchLaporan()
-    showEditModal.value = false
-    showNotificationModal('success', 'Berhasil', 'Laporan berhasil diperbarui.')
+    await updateReport(reportId, updatedData)
+    await reportsStore.loadReports()
+    uiStore.closeEditModal()
+    uiStore.showNotification('success', 'Berhasil', 'Laporan berhasil diperbarui.')
   } catch (error) {
-    showNotificationModal('error', 'Gagal', 'Terjadi kesalahan saat menyimpan perubahan.')
+    uiStore.showNotification('error', 'Gagal', 'Terjadi kesalahan saat menyimpan perubahan.')
   }
 }
-
-onMounted(() => {
-  onAuthStateChanged(auth, (currentUser) => {
-    user.value = currentUser
-  })
-  checkMyReports()
-  fetchLaporan()
-})
 </script>
 
 <template>
   <div class="flex flex-col min-h-screen bg-brand-bg font-sans">
-    <Header
-      :current-page="currentPage"
-      :user="user"
-      :has-my-reports="myReportIds.length > 0"
-      @navigate="navigate"
-      @open-chatbot="isChatbotOpen = true"
-    />
+    <Header />
 
     <main class="flex-grow container mx-auto p-4 sm:p-6 lg:p-8">
-      <div v-if="isLoading" class="text-center p-10">
+      <!-- Loading state -->
+      <div v-if="reportsStore.isLoading && !reportsStore.reports.length" class="text-center p-10">
         <p>Memuat data...</p>
       </div>
-      <template v-else>
-        <HomePage v-if="currentPage === 'home'" @navigate="navigate" />
-        <DashboardPage
-          v-if="currentPage === 'dashboard'"
-          :reports="laporanList"
-          @navigate="navigate"
-        />
-        <PetaPage v-if="currentPage === 'peta'" :reports="reportsWithCoords" />
-        <LaporPage v-if="currentPage === 'lapor'" @report-submitted="handleReportSubmitted" />
-        <LihatLaporanPage
-          v-if="currentPage === 'lihat'"
-          :reports="laporanList"
-          @view-detail="handleViewDetail"
-        />
-        <LaporanSayaPage
-          v-if="currentPage === 'laporan-saya'"
-          :my-reports="myReports"
-          @view-detail="handleViewDetail"
-          @navigate="navigate"
-          @edit-report="handleEditReport"
-        />
-        <DetailPage
-          v-if="currentPage === 'detail'"
-          :report="selectedReport"
-          :user="user"
-          @navigate-back="user ? navigate('lihat') : navigate('laporan-saya')"
-          @report-updated="handleReportUpdated"
-        />
-        <LoginPage v-if="currentPage === 'login'" @login-success="handleLoginSuccess" />
 
-        <RekapBulananPage
-          v-if="currentPage === 'rekap-bulanan'"
-          @navigate-back="navigate('dashboard')"
-        />
-      </template>
+      <!-- Router View - This is where page components render -->
+      <router-view v-else />
     </main>
 
     <Footer />
 
+    <!-- Notification Modal -->
     <NotificationModal
-      :show="showNotification"
-      :type="notification.type"
-      :title="notification.title"
-      :message="notification.message"
+      :show="uiStore.notification.show"
+      :type="uiStore.notification.type"
+      :title="uiStore.notification.title"
+      :message="uiStore.notification.message"
       @close="handleCloseNotification"
     />
 
+    <!-- Real-time Toast Notification for New Reports (Admin) -->
+    <ToastNotification
+      :show="notifStore.showToast"
+      :message="notifStore.toastMessage"
+      :report-id="notifStore.toastReportId"
+      @close="notifStore.closeToast()"
+    />
+
+    <!-- Real-time Toast Notification for Status Updates (Reporter) -->
+    <ReporterToastNotification
+      :show="reporterNotifStore.showToast"
+      :message="reporterNotifStore.toastMessage"
+      :type="reporterNotifStore.toastType"
+      :report-id="reporterNotifStore.toastReportId"
+      @close="reporterNotifStore.closeToast()"
+    />
+
+    <!-- Edit Report Modal -->
     <div
-      v-if="showEditModal"
+      v-if="uiStore.editModal.show"
       class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[2000] p-4"
     >
       <div class="bg-white rounded-lg shadow-xl w-full max-w-lg">
         <EditLaporanForm
-          :laporanToEdit="laporanUntukDiedit"
-          @close-modal="showEditModal = false"
+          :laporanToEdit="uiStore.editModal.reportData"
+          @close-modal="uiStore.closeEditModal()"
           @save-changes="handleSaveChanges"
         />
       </div>
     </div>
 
-    <button
-      @click="isChatbotOpen = !isChatbotOpen"
-      class="fixed bottom-5 right-5 h-16 w-16 bg-brand-green rounded-full shadow-lg text-white flex items-center justify-center z-[2001] hover:scale-110 transition-transform"
-    >
-      <svg
-        v-if="!isChatbotOpen"
-        xmlns="http://www.w3.org/2000/svg"
-        class="h-8 w-8"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-        stroke-width="2"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-        />
-      </svg>
-      <svg
-        v-else
-        xmlns="http://www.w3.org/2000/svg"
-        class="h-8 w-8"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-        stroke-width="2"
-      >
-        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-      </svg>
-    </button>
-
-    <Chatbot :show="isChatbotOpen" @close="isChatbotOpen = false" />
+    <ReloadPrompt />
   </div>
 </template>
+

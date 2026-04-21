@@ -1,6 +1,7 @@
 <script setup>
 import { onMounted, ref, watch } from 'vue';
 import L from 'leaflet';
+import riauBoundary from '@/data/riau-boundary.json';
 
 const props = defineProps({
   reports: {
@@ -16,10 +17,35 @@ let markers = L.layerGroup();
 const setupMap = () => {
   if (!mapContainer.value || map) return;
   const riauCenter = [0.5104, 101.4383];
-  map = L.map(mapContainer.value).setView(riauCenter, 8);
+
+  // Batas wilayah Riau (southwest, northeast)
+  const riauBounds = L.latLngBounds(
+    L.latLng(-0.35, 99.90),  // southwest
+    L.latLng(2.35, 103.70)   // northeast
+  );
+
+  map = L.map(mapContainer.value, {
+    maxBounds: riauBounds,
+    maxBoundsViscosity: 1.0,
+    minZoom: 7,
+  }).setView(riauCenter, 8);
+
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
   }).addTo(map);
+
+  // Tampilkan garis batas wilayah Riau
+  L.geoJSON(riauBoundary, {
+    style: {
+      color: '#0e7a3a',
+      weight: 3,
+      opacity: 0.8,
+      fillColor: '#16a34a',
+      fillOpacity: 0.08,
+      dashArray: '8, 4',
+    },
+  }).addTo(map);
+
   markers.addTo(map);
 };
 

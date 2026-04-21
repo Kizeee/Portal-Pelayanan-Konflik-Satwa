@@ -1,16 +1,13 @@
 <script setup>
-import MapDisplay from '../components/MapDisplay.vue';
+import { useReportsStore } from '../stores/reports'
+import MapDisplay from '../components/MapDisplay.vue'
 
-defineProps({
-  reports: Array,
-});
+const reportsStore = useReportsStore()
 </script>
 
 <template>
   <div>
-    <h2 class="text-3xl font-bold mb-6 text-gray-800">Peta Sebaran Laporan Konflik</h2>
-    <div class="bg-white p-4 rounded-xl shadow-lg">
-      <MapDisplay :reports="reports" />
-    </div>
+    <h2 class="text-3xl font-bold mb-6 text-brand-green">Peta Sebaran Konflik Satwa</h2>
+    <MapDisplay :reports="reportsStore.reportsWithCoords" />
   </div>
 </template>

@@ -1,32 +1,32 @@
 <script setup>
 import { ref } from 'vue'
-import { signOut } from 'firebase/auth'
-import { auth } from '../firebase'
+import { useRouter, useRoute } from 'vue-router'
+import { useAuthStore } from '../stores/auth'
+import { useReportsStore } from '../stores/reports'
+import NotificationDropdown from './NotificationDropdown.vue'
+import ReporterNotificationDropdown from './ReporterNotificationDropdown.vue'
 
-const props = defineProps({
-  currentPage: String,
-  user: Object,
-  hasMyReports: Boolean,
-})
-
-const emit = defineEmits(['navigate', 'open-chatbot'])
+const router = useRouter()
+const route = useRoute()
+const authStore = useAuthStore()
+const reportsStore = useReportsStore()
 
 const mobileMenuOpen = ref(false)
 
-const navLinkClass = (page) => {
-  return props.currentPage === page
+const navLinkClass = (routeName) => {
+  return route.name === routeName
     ? 'text-brand-green font-semibold border-b-2 border-brand-green'
     : 'text-gray-600 hover:text-brand-green transition-colors duration-300'
 }
 
-const navigateAndClose = (page) => {
-  emit('navigate', page)
+const navigateAndClose = (routeName) => {
+  router.push({ name: routeName })
   mobileMenuOpen.value = false
 }
 
 const handleLogout = async () => {
-  await signOut(auth)
-  navigateAndClose('home')
+  await authStore.logout()
+  navigateAndClose('Home')
 }
 </script>
 
@@ -34,25 +34,27 @@ const handleLogout = async () => {
   <header class="bg-white/80 backdrop-blur-lg shadow-sm sticky top-0" style="z-index: 9999">
     <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex items-center justify-between h-20">
-        <div class="flex items-center space-x-3 cursor-pointer" @click="emit('navigate', 'home')">
+        <div class="flex items-center space-x-3 cursor-pointer" @click="router.push({ name: 'Home' })">
           <img src="/logo-BBKSDA.png" alt="Logo BBKSDA Riau" class="h-10 w-10 object-contain" />
           <span class="text-xl font-bold text-gray-800">BBKSDA Riau</span>
         </div>
 
         <div class="hidden md:flex items-center space-x-8">
-          <template v-if="user">
+          <template v-if="authStore.user">
             <a
               href="#"
-              @click.prevent="emit('navigate', 'dashboard')"
-              :class="navLinkClass('dashboard')"
+              @click.prevent="router.push({ name: 'Dashboard' })"
+              :class="navLinkClass('Dashboard')"
               >Statistik</a
             >
-            <a href="#" @click.prevent="emit('navigate', 'peta')" :class="navLinkClass('peta')"
+            <a href="#" @click.prevent="router.push({ name: 'Peta' })" :class="navLinkClass('Peta')"
               >Peta Sebaran</a
             >
-            <a href="#" @click.prevent="emit('navigate', 'lihat')" :class="navLinkClass('lihat')"
+            <a href="#" @click.prevent="router.push({ name: 'LihatLaporan' })" :class="navLinkClass('LihatLaporan')"
               >Laporan</a
             >
+            <!-- Notification Bell for Admin -->
+            <NotificationDropdown />
             <button
               @click="handleLogout"
               class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors text-sm font-semibold"
@@ -62,26 +64,34 @@ const handleLogout = async () => {
           </template>
 
           <template v-else>
-            <a href="#" @click.prevent="emit('navigate', 'home')" :class="navLinkClass('home')"
+            <a href="#" @click.prevent="router.push({ name: 'Home' })" :class="navLinkClass('Home')"
               >Home</a
             >
-            <a href="#" @click.prevent="emit('navigate', 'lapor')" :class="navLinkClass('lapor')"
+            <a href="#" @click.prevent="router.push({ name: 'Lapor' })" :class="navLinkClass('Lapor')"
               >Buat Laporan</a
             >
             <a
-              v-if="hasMyReports"
+              v-if="reportsStore.myReportIds.length > 0"
               href="#"
-              @click.prevent="emit('navigate', 'laporan-saya')"
-              :class="navLinkClass('laporan-saya')"
+              @click.prevent="router.push({ name: 'LaporanSaya' })"
+              :class="navLinkClass('LaporanSaya')"
               >Laporan Saya</a
             >
-            <a href="#" @click.prevent="emit('navigate', 'login')" :class="navLinkClass('login')"
+            <!-- Reporter Notification Bell -->
+            <ReporterNotificationDropdown v-if="reportsStore.myReportIds.length > 0" />
+            <a href="#" @click.prevent="router.push({ name: 'Login' })" :class="navLinkClass('Login')"
               >Login Admin</a
             >
           </template>
         </div>
 
-        <div class="md:hidden flex items-center">
+        <div class="md:hidden flex items-center space-x-2">
+          <template v-if="authStore.user">
+            <NotificationDropdown />
+          </template>
+          <template v-else-if="reportsStore.myReportIds.length > 0">
+            <ReporterNotificationDropdown />
+          </template>
           <button @click="mobileMenuOpen = !mobileMenuOpen" class="text-gray-600">
             <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path
@@ -97,22 +107,22 @@ const handleLogout = async () => {
     </nav>
 
     <div v-show="mobileMenuOpen" class="md:hidden bg-white border-t">
-      <template v-if="user">
+      <template v-if="authStore.user">
         <a
           href="#"
-          @click.prevent="navigateAndClose('dashboard')"
+          @click.prevent="navigateAndClose('Dashboard')"
           class="block py-3 px-4 text-base font-medium text-gray-600 hover:bg-gray-50"
           >Statistik</a
         >
         <a
           href="#"
-          @click.prevent="navigateAndClose('peta')"
+          @click.prevent="navigateAndClose('Peta')"
           class="block py-3 px-4 text-base font-medium text-gray-600 hover:bg-gray-50"
           >Peta Sebaran</a
         >
         <a
           href="#"
-          @click.prevent="navigateAndClose('lihat')"
+          @click.prevent="navigateAndClose('LihatLaporan')"
           class="block py-3 px-4 text-base font-medium text-gray-600 hover:bg-gray-50"
           >Laporan</a
         >
@@ -127,26 +137,26 @@ const handleLogout = async () => {
       <template v-else>
         <a
           href="#"
-          @click.prevent="navigateAndClose('home')"
+          @click.prevent="navigateAndClose('Home')"
           class="block py-3 px-4 text-base font-medium text-gray-600 hover:bg-gray-50"
           >Home</a
         >
         <a
           href="#"
-          @click.prevent="navigateAndClose('lapor')"
+          @click.prevent="navigateAndClose('Lapor')"
           class="block py-3 px-4 text-base font-medium text-gray-600 hover:bg-gray-50"
           >Buat Laporan</a
         >
         <a
-          v-if="hasMyReports"
+          v-if="reportsStore.myReportIds.length > 0"
           href="#"
-          @click.prevent="navigateAndClose('laporan-saya')"
+          @click.prevent="navigateAndClose('LaporanSaya')"
           class="block py-3 px-4 text-base font-medium text-gray-600 hover:bg-gray-50"
           >Laporan Saya</a
         >
         <a
           href="#"
-          @click.prevent="navigateAndClose('login')"
+          @click.prevent="navigateAndClose('Login')"
           class="block py-3 px-4 text-base font-medium text-gray-600 hover:bg-gray-50"
           >Login Admin</a
         >
