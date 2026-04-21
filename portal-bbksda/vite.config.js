@@ -21,7 +21,11 @@ export default defineConfig({
         type: 'module',
       },
       injectManifest: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,jpg,jpeg}'],
+        globPatterns: ['**/*.{js,css,html,ico,svg,jpg,jpeg,png}'],
+        // Exclude large assets (>2 MB) from SW precache — let the browser handle them
+        globIgnores: ['**/background-forest*'],
+        // Raise precache file size limit to 5 MB (default is 2 MB)
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
       },
       includeAssets: ['favicon.ico', 'logo-bbksda-512.png', 'pwa-192x192.png'],
       manifest: {
