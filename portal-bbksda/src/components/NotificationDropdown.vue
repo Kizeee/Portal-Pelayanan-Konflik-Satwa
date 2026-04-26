@@ -103,11 +103,10 @@ onUnmounted(() => {
     >
       <div
         v-if="notifStore.showDropdown"
-        class="absolute right-0 mt-3 w-96 max-h-[480px] bg-white rounded-2xl shadow-2xl ring-1 ring-black/10 overflow-hidden"
-        style="z-index: 10000"
+        class="notif-dropdown-panel"
       >
         <!-- Header -->
-        <div class="px-5 py-4 bg-gradient-to-r from-emerald-500 to-green-600 text-white">
+        <div class="px-5 py-4 bg-gradient-to-r from-emerald-500 to-green-600 text-white rounded-t-2xl">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
               <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -221,6 +220,40 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
+/* Dropdown panel - responsive positioning */
+.notif-dropdown-panel {
+  z-index: 10000;
+  max-height: 480px;
+  background: white;
+  border-radius: 1rem;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  ring: 1px solid rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+/* Mobile: fixed centered panel */
+@media (max-width: 639px) {
+  .notif-dropdown-panel {
+    position: fixed;
+    top: 5rem;
+    left: 1rem;
+    right: 1rem;
+    width: auto;
+    max-height: calc(100vh - 7rem);
+    max-height: calc(100dvh - 7rem);
+  }
+}
+
+/* Desktop: absolute dropdown */
+@media (min-width: 640px) {
+  .notif-dropdown-panel {
+    position: absolute;
+    right: 0;
+    margin-top: 0.75rem;
+    width: 24rem; /* w-96 */
+  }
+}
+
 @keyframes ring-bell {
   0% { transform: rotate(0deg); }
   5% { transform: rotate(15deg); }

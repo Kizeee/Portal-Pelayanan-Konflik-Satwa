@@ -66,7 +66,7 @@ const handleViewDetail = () => {
     leave-from-class="translate-x-0 opacity-100"
     leave-to-class="translate-x-full opacity-0"
   >
-    <div v-if="show && isVisible" class="fixed top-24 right-5 z-[10001] w-full max-w-sm">
+    <div v-if="show && isVisible" class="fixed top-24 right-3 left-3 sm:left-auto sm:right-5 z-[10001] w-auto sm:w-full sm:max-w-sm">
       <div class="rounded-xl bg-white shadow-2xl ring-1 ring-black/5 overflow-hidden">
         <!-- Progress bar at top -->
         <div class="h-1 bg-gray-100 overflow-hidden">
