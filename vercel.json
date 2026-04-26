@@ -1,7 +1,6 @@
 {
   "buildCommand": "cd portal-bbksda && npm install && npm run build",
   "outputDirectory": "portal-bbksda/dist",
-  "framework": "vite",
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ]

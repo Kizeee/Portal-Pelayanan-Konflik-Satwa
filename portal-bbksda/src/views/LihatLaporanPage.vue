@@ -182,15 +182,15 @@ const saveVerification = async (markVerified = false) => {
   }
 
   if (markVerified) {
-    payload.status = 'verified'
+    payload.status = 'Diterima'
     // Tambahkan entri statusHistory agar watcher warga menerima catatan
     payload.statusHistory = arrayUnion({
-      status: 'verified',
+      status: 'Diterima',
       timestamp: new Date(),
       updatedBy: authStore.user?.email || 'Admin',
       notes: verificationForm.value.status_satwa_akhir?.trim()
         ? `Status satwa: ${verificationForm.value.status_satwa_akhir.trim()}`
-        : 'Laporan telah diverifikasi oleh admin.',
+        : 'Laporan telah diverifikasi dan diterima oleh admin.',
     })
   }
 
@@ -203,7 +203,7 @@ const saveVerification = async (markVerified = false) => {
     uiStore.showNotification(
       'success',
       markVerified ? 'Laporan terverifikasi' : 'Perubahan disimpan',
-      markVerified ? 'Status laporan berubah menjadi verified.' : 'Data tambahan tersimpan.'
+      markVerified ? 'Status laporan berubah menjadi Diterima.' : 'Data tambahan tersimpan.'
     )
   } catch (error) {
     console.error('Gagal menyimpan verifikasi:', error)
