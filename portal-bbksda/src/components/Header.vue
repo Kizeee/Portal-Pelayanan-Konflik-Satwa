@@ -34,7 +34,7 @@ const handleLogout = async () => {
   <header class="bg-white/80 backdrop-blur-lg shadow-sm sticky top-0" style="z-index: 9999">
     <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex items-center justify-between h-20">
-        <div class="flex items-center space-x-3 cursor-pointer" @click="router.push({ name: 'Home' })">
+        <div class="flex items-center space-x-3 cursor-pointer" @click="router.push({ name: authStore.user ? 'Dashboard' : 'Home' })">
           <img src="/logo-BBKSDA.png" alt="Logo BBKSDA Riau" class="h-10 w-10 object-contain" />
           <span class="text-xl font-bold text-gray-800">BBKSDA Riau</span>
         </div>

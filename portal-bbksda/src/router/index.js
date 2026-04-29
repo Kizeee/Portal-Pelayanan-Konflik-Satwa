@@ -112,6 +112,9 @@ router.beforeEach((to, from, next) => {
   } else if (to.name === 'Login' && authStore.user) {
     // User already logged in, redirect to dashboard
     next({ name: 'Dashboard' })
+  } else if (authStore.user && ['Home', 'Lapor', 'LaporanSaya'].includes(to.name)) {
+    // Admin should not access public-only pages, redirect to dashboard
+    next({ name: 'Dashboard' })
   } else {
     // Allow navigation
     next()
