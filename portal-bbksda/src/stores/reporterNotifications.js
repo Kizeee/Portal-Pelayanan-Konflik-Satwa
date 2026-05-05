@@ -194,6 +194,24 @@ export const useReporterNotificationsStore = defineStore('reporterNotifications'
   }
 
   /**
+   * Restart watching all given reportIds — useful when PWA returns from background.
+   * Tears down existing (possibly stale) listeners and creates new ones.
+   */
+  const restartWatching = (reportIds) => {
+    if (!reportIds || reportIds.length === 0) return
+    // Unsubscribe each listener individually so we keep knownStatuses intact
+    // (avoids showing duplicate notifications for statuses already seen)
+    reportIds.forEach((id) => {
+      if (listeners.has(id)) {
+        listeners.get(id)() // call unsubscribe
+        listeners.delete(id)
+      }
+    })
+    // Re-subscribe
+    reportIds.forEach((id) => watchReport(id))
+  }
+
+  /**
    * Stop all listeners
    */
   const stopAll = () => {
@@ -303,6 +321,7 @@ export const useReporterNotificationsStore = defineStore('reporterNotifications'
 
     // Actions
     startWatching,
+    restartWatching,
     watchReport,
     stopAll,
     markAsRead,

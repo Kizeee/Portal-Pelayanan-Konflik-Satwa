@@ -46,10 +46,23 @@ onMounted(async () => {
   }
 
   // Mulai memantau laporan warga setelah data selesai dimuat
-  // Pastikan tidak menjalankan untuk admin yang sudah login
+  // initialize() sudah selesai, jadi myReportIds pasti sudah ter-load dari localStorage
   if (!authStore.user && reportsStore.myReportIds.length > 0) {
     reporterNotifStore.startWatching(reportsStore.myReportIds)
   }
+
+  // ── Refresh data ketika PWA kembali ke foreground (dari background/minimize) ──
+  // Ini mengatasi masalah PWA yang menampilkan data lama saat dibuka kembali
+  document.addEventListener('visibilitychange', async () => {
+    if (document.visibilityState === 'visible') {
+      // Reload laporan dari Firestore untuk mendapatkan data terbaru
+      await reportsStore.loadReports()
+      // Restart watcher agar listener Firestore yang mungkin terputus di-reconnect
+      if (!authStore.user && reportsStore.myReportIds.length > 0) {
+        reporterNotifStore.restartWatching(reportsStore.myReportIds)
+      }
+    }
+  })
 })
 
 // Watch auth state: start/stop real-time notification listener

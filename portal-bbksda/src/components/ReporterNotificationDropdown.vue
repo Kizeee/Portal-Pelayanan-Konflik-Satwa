@@ -249,7 +249,7 @@ onUnmounted(() => {
   background: white;
   border-radius: 1rem;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-  ring: 1px solid rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.08);
   overflow: hidden;
 }
 
