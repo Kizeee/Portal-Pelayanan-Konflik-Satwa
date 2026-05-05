@@ -18,6 +18,46 @@ const uiStore = useUIStore()
 const authStore = useAuthStore()
 const { updateReport } = useReports()
 
+// ===== DETEKSI NOMOR MENCURIGAKAN =====
+// Nomor yang mengirim >= 3 laporan dalam 30 hari terakhir dianggap mencurigakan
+const SUSPICIOUS_THRESHOLD = 3
+const SUSPICIOUS_WINDOW_DAYS = 30
+
+const suspiciousPhones = computed(() => {
+  const now = Date.now()
+  const windowMs = SUSPICIOUS_WINDOW_DAYS * 24 * 60 * 60 * 1000
+  const phoneCounts = {}
+
+  reportsStore.reports.forEach((r) => {
+    if (!r.telepon) return
+    const createdAt = r.createdAt?.toDate ? r.createdAt.toDate() : new Date(r.createdAt)
+    if (now - createdAt.getTime() <= windowMs) {
+      phoneCounts[r.telepon] = (phoneCounts[r.telepon] || 0) + 1
+    }
+  })
+
+  // Kembalikan Set nomor yang mencapai threshold
+  return new Set(
+    Object.entries(phoneCounts)
+      .filter(([, count]) => count >= SUSPICIOUS_THRESHOLD)
+      .map(([phone]) => phone)
+  )
+})
+
+const isSuspicious = (report) => suspiciousPhones.value.has(report.telepon)
+
+// Filter khusus laporan mencurigakan
+const showOnlySuspicious = ref(false)
+
+const displayedReports = computed(() => {
+  if (!showOnlySuspicious.value) return reportsStore.paginatedReports
+  return reportsStore.paginatedReports.filter((r) => isSuspicious(r))
+})
+
+const suspiciousCount = computed(() => {
+  return reportsStore.reports.filter((r) => isSuspicious(r)).length
+})
+
 // View mode
 const viewMode = ref('grid') // grid | list
 
@@ -328,10 +368,30 @@ const saveVerification = async (markVerified = false) => {
         <!-- Spacer to push reset button right -->
         <div class="flex-grow"></div>
 
+        <!-- Filter Mencurigakan -->
+        <button
+          @click="showOnlySuspicious = !showOnlySuspicious"
+          :class="[
+            'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold border transition-all',
+            showOnlySuspicious
+              ? 'bg-red-500 text-white border-red-500 shadow-md'
+              : 'bg-white text-red-600 border-red-300 hover:bg-red-50'
+          ]"
+          :title="`${suspiciousCount} laporan dari nomor yang mengirim ≥${SUSPICIOUS_THRESHOLD}x dalam ${SUSPICIOUS_WINDOW_DAYS} hari`"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          Mencurigakan
+          <span class="bg-white text-red-600 text-xs font-bold rounded-full px-1.5 py-0.5 min-w-[20px] text-center" :class="{ 'bg-red-100': !showOnlySuspicious }">
+            {{ suspiciousCount }}
+          </span>
+        </button>
+
         <!-- Reset Filters -->
         <button
-          v-if="reportsStore.hasActiveFilters"
-          @click="reportsStore.clearFilters()"
+          v-if="reportsStore.hasActiveFilters || showOnlySuspicious"
+          @click="reportsStore.clearFilters(); showOnlySuspicious = false"
           class="filter-reset-btn"
         >
           ✕ Reset Filter
@@ -376,15 +436,29 @@ const saveVerification = async (markVerified = false) => {
       class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
     >
       <UiCard
-        v-for="report in reportsStore.paginatedReports"
+        v-for="report in displayedReports"
         :key="report.id"
         hoverable
         clickable
         @click="handleViewDetail(report.id)"
         class="animate-slide-up"
+        :class="{ 'ring-2 ring-red-300': isSuspicious(report) }"
       >
         <div class="flex justify-between items-start mb-3">
-          <h3 class="text-xl font-bold text-primary-700 font-mono">{{ report.idLaporan }}</h3>
+          <div class="flex items-center gap-2">
+            <h3 class="text-xl font-bold text-primary-700 font-mono">{{ report.idLaporan }}</h3>
+            <!-- Flag mencurigakan -->
+            <span
+              v-if="isSuspicious(report)"
+              class="inline-flex items-center gap-1 bg-red-100 text-red-700 text-xs font-bold px-2 py-0.5 rounded-full border border-red-200"
+              :title="`Nomor ${report.telepon} telah mengirim ${SUSPICIOUS_THRESHOLD}+ laporan dalam ${SUSPICIOUS_WINDOW_DAYS} hari terakhir`"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              Mencurigakan
+            </span>
+          </div>
           <div class="flex items-center gap-2">
             <UiBadge :status="report.status" size="md" dot />
             <UiButton variant="outline" size="xs" @click.stop="openVerification(report)">
@@ -513,16 +587,29 @@ const saveVerification = async (markVerified = false) => {
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
             <tr
-              v-for="report in reportsStore.paginatedReports"
+              v-for="report in displayedReports"
               :key="report.id"
               class="hover:bg-gray-50 transition-colors cursor-pointer"
+              :class="{ 'bg-red-50': isSuspicious(report) }"
               @click="handleViewDetail(report.id)"
             >
               <td class="px-6 py-4 whitespace-nowrap text-sm font-mono font-bold text-primary-600">
                 {{ report.idLaporan }}
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                {{ report.nama }}
+                <div class="flex items-center gap-2">
+                  {{ report.nama }}
+                  <span
+                    v-if="isSuspicious(report)"
+                    class="inline-flex items-center gap-1 bg-red-100 text-red-700 text-xs font-bold px-2 py-0.5 rounded-full border border-red-200"
+                    :title="`Nomor ${report.telepon} telah mengirim ${SUSPICIOUS_THRESHOLD}+ laporan dalam ${SUSPICIOUS_WINDOW_DAYS} hari`"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    ⚠
+                  </span>
+                </div>
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                 {{ report.jenisSatwa }}

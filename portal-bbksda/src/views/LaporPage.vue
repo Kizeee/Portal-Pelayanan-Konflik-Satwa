@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref, onUnmounted } from 'vue'
+import { onMounted, ref, onUnmounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useReportsStore } from '../stores/reports'
 import { useUIStore } from '../stores/ui'
@@ -13,6 +13,43 @@ import {
 
 const router = useRouter()
 const reportsStore = useReportsStore()
+
+// --- RATE LIMITING ---
+const COOLDOWN_KEY = 'lastReportSubmitTime'
+const COOLDOWN_MS = 24 * 60 * 60 * 1000 // 24 jam
+const isRateLimited = ref(false)
+const cooldownRemainingMs = ref(0)
+let countdownInterval = null
+
+const cooldownRemaining = computed(() => {
+  const totalSec = Math.ceil(cooldownRemainingMs.value / 1000)
+  const hours = Math.floor(totalSec / 3600)
+  const minutes = Math.floor((totalSec % 3600) / 60)
+  const seconds = totalSec % 60
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+})
+
+const checkRateLimit = () => {
+  const last = localStorage.getItem(COOLDOWN_KEY)
+  if (!last) return false
+  const elapsed = Date.now() - parseInt(last, 10)
+  if (elapsed < COOLDOWN_MS) {
+    cooldownRemainingMs.value = COOLDOWN_MS - elapsed
+    return true
+  }
+  return false
+}
+
+const startCountdown = () => {
+  if (countdownInterval) clearInterval(countdownInterval)
+  countdownInterval = setInterval(() => {
+    cooldownRemainingMs.value -= 1000
+    if (cooldownRemainingMs.value <= 0) {
+      isRateLimited.value = false
+      clearInterval(countdownInterval)
+    }
+  }, 1000)
+}
 const uiStore = useUIStore()
 const { uploadFiles, validateFiles } = useStorage()
 
@@ -78,12 +115,19 @@ const handleFileChange = (event) => {
 onMounted(() => {
   // Pastikan antrean offline otomatis diproses ketika koneksi kembali
   detachOnlineListener = onOnlineProcessQueue()
+
+  // Cek rate limit saat komponen dimuat
+  if (checkRateLimit()) {
+    isRateLimited.value = true
+    startCountdown()
+  }
 })
 
 // Pastikan semua URL preview dibersihkan saat komponen ditutup
 onUnmounted(() => {
   previewUrls.value.forEach((p) => URL.revokeObjectURL(p.url))
   if (detachOnlineListener) detachOnlineListener()
+  if (countdownInterval) clearInterval(countdownInterval)
 })
 
 const handleLocationUpdate = (coords) => {
@@ -117,6 +161,13 @@ const resetForm = () => {
 }
 
 const validateAndSubmit = () => {
+  // Cek rate limit sebelum validasi form
+  if (checkRateLimit()) {
+    isRateLimited.value = true
+    startCountdown()
+    return
+  }
+
   errors.value = {}
   if (!newLaporan.value.nama.trim()) errors.value.nama = 'Nama tidak boleh kosong.'
   if (!newLaporan.value.telepon.trim()) errors.value.telepon = 'Telepon tidak boleh kosong.'
@@ -192,6 +243,9 @@ const submitLaporan = async () => {
     // Create report using store
     await reportsStore.addReport(reportData)
 
+    // Simpan timestamp pengiriman untuk rate limiting
+    localStorage.setItem(COOLDOWN_KEY, Date.now().toString())
+
     resetForm()
     uiStore.showNotification(
       'success',
@@ -218,7 +272,54 @@ const submitLaporan = async () => {
 </script>
 
 <template>
-  <div class="max-w-4xl mx-auto bg-white p-5 sm:p-8 md:p-10 rounded-2xl shadow-lg">
+  <div class="max-w-4xl mx-auto">
+    <!-- ===== RATE LIMIT BLOCKER ===== -->
+    <div
+      v-if="isRateLimited"
+      class="bg-white p-8 sm:p-12 rounded-2xl shadow-lg text-center"
+    >
+      <!-- Icon -->
+      <div class="mx-auto w-20 h-20 rounded-full bg-amber-100 flex items-center justify-center mb-6">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      </div>
+
+      <h2 class="text-2xl font-bold text-gray-800 mb-2">Laporan Sudah Terkirim</h2>
+      <p class="text-gray-500 mb-6 max-w-md mx-auto">
+        Anda baru saja mengirimkan laporan. Demi menjaga kualitas data, setiap perangkat
+        hanya dapat mengirim <strong>1 laporan per 24 jam</strong>.
+      </p>
+
+      <!-- Countdown Timer -->
+      <div class="inline-flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-2xl px-8 py-5 mb-8">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-amber-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <div class="text-left">
+          <p class="text-xs text-amber-600 font-semibold uppercase tracking-wider mb-1">Dapat mengirim lagi dalam</p>
+          <p class="text-3xl font-mono font-bold text-amber-700 tracking-widest">{{ cooldownRemaining }}</p>
+        </div>
+      </div>
+
+      <div class="flex flex-col sm:flex-row gap-3 justify-center">
+        <button
+          @click="router.push({ name: 'LaporanSaya' })"
+          class="bg-brand-green text-white font-semibold py-3 px-6 rounded-xl hover:opacity-90 transition"
+        >
+          Lihat Laporan Saya
+        </button>
+        <button
+          @click="router.push({ name: 'Home' })"
+          class="bg-gray-100 text-gray-700 font-semibold py-3 px-6 rounded-xl hover:bg-gray-200 transition"
+        >
+          Kembali ke Beranda
+        </button>
+      </div>
+    </div>
+
+    <!-- ===== FORM LAPORAN (normal) ===== -->
+    <div v-else class="bg-white p-5 sm:p-8 md:p-10 rounded-2xl shadow-lg">
     <h2 class="text-2xl sm:text-3xl font-bold mb-2 text-center text-brand-green">Formulir Pengaduan Konflik</h2>
     <p class="text-center text-gray-500 mb-6 sm:mb-8 text-sm sm:text-base">Isi formulir di bawah ini dengan data yang akurat.</p>
 
@@ -252,7 +353,7 @@ const submitLaporan = async () => {
             />
             <p v-if="errors.telepon" class="text-red-600 text-sm mt-1">{{ errors.telepon }}</p>
           </div>
-          <div>
+          <div class="min-w-0">
             <label for="tanggal" class="block text-sm font-semibold text-gray-700 mb-1"
               >Tanggal Kejadian</label
             >
@@ -260,7 +361,7 @@ const submitLaporan = async () => {
               type="date"
               v-model="newLaporan.tanggal"
               id="tanggal"
-              class="w-full px-4 py-2 border rounded-lg"
+              class="w-full max-w-full px-4 py-2 border rounded-lg box-border"
               :class="{ 'border-red-500': errors.tanggal }"
             />
             <p v-if="errors.tanggal" class="text-red-600 text-sm mt-1">{{ errors.tanggal }}</p>
@@ -402,5 +503,6 @@ const submitLaporan = async () => {
         </button>
       </div>
     </form>
+    </div><!-- end v-else form -->
   </div>
 </template>
