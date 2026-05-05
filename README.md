@@ -508,6 +508,4 @@ Program Studi Teknik Informatika
 Fakultas Teknik  
 Universitas Islam Riau
 ---
-Lisensi
-Project ini dikembangkan untuk kebutuhan penelitian Tugas Akhir. Penggunaan, pengembangan, atau distribusi ulang kode dapat disesuaikan dengan kebutuhan akademik dan pengembangan sistem lebih lanjut.
->>>>>>> 7e66a90759d869ca5556f9ca929aca80aafcf41a
+
