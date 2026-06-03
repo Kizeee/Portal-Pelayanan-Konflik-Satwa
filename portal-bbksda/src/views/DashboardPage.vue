@@ -9,9 +9,6 @@ import DoughnutChart from '../components/charts/DoughnutChart.vue'
 const router = useRouter()
 const reportsStore = useReportsStore()
 
-/* =========================
-   BULAN DINAMIS (YYYY-MM)
-========================= */
 const selectedMonth = ref(new Date().toISOString().slice(0, 7))
 
 const STATUS_GROUPS = {
@@ -34,9 +31,6 @@ const isValidReport = (report) => (
   isCompletedReport(report)
 )
 
-/* =========================
-   FILTER LAPORAN PER BULAN
-========================= */
 const reportsByMonth = computed(() => {
   if (!selectedMonth.value) return reportsStore.reports
 
@@ -53,9 +47,6 @@ const reportsByMonth = computed(() => {
 
 const validReportsByMonth = computed(() => reportsByMonth.value.filter(isValidReport))
 
-/* =========================
-   STATISTIK UTAMA
-========================= */
 const totalLaporan = computed(() => reportsByMonth.value.length)
 
 const laporanPending = computed(() => reportsByMonth.value.filter(isPendingReport).length)
@@ -66,9 +57,6 @@ const laporanSelesai = computed(() => reportsByMonth.value.filter(isCompletedRep
 
 const laporanDitolak = computed(() => reportsByMonth.value.filter(isRejectedReport).length)
 
-/* =========================
-   LAPORAN PER JENIS SATWA
-========================= */
 const laporanPerSatwa = computed(() => {
   const counts = validReportsByMonth.value.reduce((acc, report) => {
     const key = report.jenisSatwa || 'Tidak Diketahui'
@@ -97,9 +85,6 @@ const laporanPerSatwa = computed(() => {
   }
 })
 
-/* =========================
-   LAPORAN PER STATUS
-========================= */
 const laporanPerStatus = computed(() => {
   const reports = reportsByMonth.value
 
@@ -121,9 +106,6 @@ const laporanPerStatus = computed(() => {
   }
 })
 
-/* =========================
-   LAPORAN PER PRIORITAS
-========================= */
 const laporanPerPrioritas = computed(() => {
   const counts = validReportsByMonth.value.reduce((acc, report) => {
     const prioritas = report.prioritas || 'Sedang'
@@ -153,9 +135,6 @@ const laporanPerPrioritas = computed(() => {
   }
 })
 
-/* =========================
-   POLA WAKTU MINGGUAN
-========================= */
 const laporanPerMinggu = computed(() => {
   const minggu = [0, 0, 0, 0]
 
@@ -184,9 +163,7 @@ const laporanPerMinggu = computed(() => {
   }
 })
 
-/* =========================
-   STATISTIK LOKASI
-========================= */
+
 const laporanPerLokasi = computed(() => {
   const counts = validReportsByMonth.value.reduce((acc, report) => {
     let lokasi = 'Tidak Diketahui'
@@ -219,9 +196,7 @@ const laporanPerLokasi = computed(() => {
   }
 })
 
-/* =========================
-   INSIGHT OTOMATIS
-========================= */
+
 const dashboardInsights = computed(() => {
   const reports = reportsByMonth.value
   const validReports = validReportsByMonth.value
@@ -322,9 +297,6 @@ const dashboardInsights = computed(() => {
   return insights
 })
 
-/* =========================
-   STATISTIK WAKTU PENANGANAN
-========================= */
 const statsPenanganan = computed(() => {
   const completedReports = reportsByMonth.value.filter(isCompletedReport)
   
@@ -364,7 +336,6 @@ const statsPenanganan = computed(() => {
     }
   })
 
-  // Format ms to readable text (X hari Y jam Z menit)
   const formatTime = (ms) => {
     if (!isFinite(ms)) return '-'
     
