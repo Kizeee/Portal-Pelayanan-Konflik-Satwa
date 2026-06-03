@@ -119,38 +119,38 @@ onMounted(() => {
 <template>
   <div class="max-w-3xl mx-auto px-2">
     <div class="mb-6">
-      <h2 class="text-2xl sm:text-3xl font-bold text-brand-green">Laporan Saya</h2>
-      <p class="text-gray-500 text-sm mt-1">
+      <h2 class="text-2xl sm:text-3xl font-bold text-stone-800">Laporan Saya</h2>
+      <p class="text-stone-500 text-sm mt-1">
         Masukkan ID Tiket yang Anda terima setelah submit laporan untuk melihat status terbaru dari database.
       </p>
     </div>
 
-    <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-5 sm:p-6">
+    <div class="bg-white border border-stone-200 rounded-xl shadow-sm p-5 sm:p-6">
       <form class="flex flex-col sm:flex-row gap-3 sm:items-end" @submit.prevent="handleSearch()">
         <div class="flex-1">
-          <label for="ticket-id" class="block text-sm font-bold text-gray-700 mb-1">ID Tiket</label>
+          <label for="ticket-id" class="block text-sm font-semibold text-stone-700 mb-1.5">ID Tiket Laporan</label>
           <input
             id="ticket-id"
             v-model="ticketId"
             type="text"
-            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-green-light focus:border-brand-green-light outline-none font-mono text-sm uppercase"
+            class="w-full px-4 py-2.5 border border-stone-300 rounded-lg focus:ring-2 focus:ring-forest-300 focus:border-forest-500 outline-none font-mono text-sm uppercase bg-white"
             placeholder="BKSDA-202606-0001"
           />
         </div>
         <button
           type="submit"
           :disabled="isSearching"
-          class="bg-brand-green text-white font-bold py-3 px-6 rounded-lg hover:bg-brand-green-light transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+          class="bg-forest-600 text-white font-semibold py-2.5 px-6 rounded-lg hover:bg-forest-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed text-sm"
         >
           {{ isSearching ? 'Mencari...' : 'Cari Status' }}
         </button>
       </form>
-      <p class="text-xs text-gray-400 mt-3">
+      <p class="text-xs text-stone-400 mt-2.5">
         ID Tiket bersifat unik. Simpan ID tersebut agar Anda dapat memantau perkembangan laporan dari perangkat mana pun.
       </p>
     </div>
 
-    <div v-if="errorMessage" class="mt-5 bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 text-sm font-semibold">
+    <div v-if="errorMessage" class="mt-4 bg-red-50 border border-red-200 text-red-700 rounded-xl p-3.5 text-sm font-medium">
       {{ errorMessage }}
     </div>
 
@@ -162,33 +162,33 @@ onMounted(() => {
       <p class="text-sm text-gray-500">Masukkan ID Tiket lalu tekan Cari Status.</p>
     </div>
 
-    <div v-if="foundReport" class="mt-6 bg-white border border-gray-200 rounded-xl shadow-sm p-5 sm:p-6">
-      <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 pb-5 border-b border-gray-100">
+    <div v-if="foundReport" class="mt-5 bg-white border border-stone-200 rounded-xl shadow-sm p-5 sm:p-6">
+      <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 pb-4 border-b border-stone-100">
         <div>
-          <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">ID Tiket</p>
-          <h3 class="text-xl sm:text-2xl font-mono font-extrabold text-brand-green mt-1">
+          <p class="text-xs font-semibold text-stone-400 uppercase tracking-wider">ID Tiket</p>
+          <h3 class="text-xl sm:text-2xl font-mono font-bold text-forest-700 mt-1">
             {{ foundReport.idLaporan || foundReport.id }}
           </h3>
         </div>
-        <span :class="statusClass" class="inline-flex items-center justify-center px-3 py-1 rounded-full border text-xs font-extrabold uppercase tracking-wide self-start">
+        <span :class="statusClass" class="inline-flex items-center justify-center px-3 py-1 rounded-full border text-xs font-semibold uppercase tracking-wide self-start">
           {{ statusLabel }}
         </span>
       </div>
 
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-gray-600 py-5">
-        <p><strong class="text-gray-800">Jenis Satwa:</strong> {{ foundReport.jenisSatwa || '-' }}</p>
-        <p><strong class="text-gray-800">Tanggal Kejadian:</strong> {{ formatDate(foundReport.tanggal) }}</p>
-        <p class="sm:col-span-2"><strong class="text-gray-800">Lokasi:</strong> {{ foundReport.lokasi || '-' }}</p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-stone-600 py-4">
+        <p><strong class="text-stone-700">Jenis Satwa:</strong> {{ foundReport.jenisSatwa || '-' }}</p>
+        <p><strong class="text-stone-700">Tanggal Kejadian:</strong> {{ formatDate(foundReport.tanggal) }}</p>
+        <p class="sm:col-span-2"><strong class="text-stone-700">Lokasi:</strong> {{ foundReport.lokasi || '-' }}</p>
       </div>
 
-      <div v-if="getStatusStep(foundReport.status) === -1" class="bg-red-50 border border-red-200 text-red-700 text-sm font-semibold p-3 rounded-lg text-center">
+      <div v-if="getStatusStep(foundReport.status) === -1" class="bg-red-50 border border-red-200 text-red-700 text-sm font-medium p-3 rounded-lg text-center">
         Laporan ini ditolak atau tidak valid dan tidak dapat ditindaklanjuti lebih lanjut.
       </div>
       <div v-else class="px-1 py-3">
         <div class="relative flex items-start justify-between">
-          <div class="absolute left-0 right-0 top-3 h-1 bg-gray-200">
+          <div class="absolute left-0 right-0 top-3 h-1 bg-stone-200 rounded-full">
             <div
-              class="h-full bg-brand-green transition-all duration-300"
+              class="h-full bg-forest-500 rounded-full transition-all duration-500"
               :style="{ width: `${((getStatusStep(foundReport.status) - 1) / 3) * 100}%` }"
             ></div>
           </div>
@@ -199,33 +199,33 @@ onMounted(() => {
             class="relative z-10 flex flex-col items-center text-center w-20"
           >
             <div
-              class="h-7 w-7 rounded-full flex items-center justify-center text-[11px] font-bold ring-4 ring-white shadow-sm"
-              :class="getStatusStep(foundReport.status) >= index + 1 ? 'bg-brand-green text-white' : 'bg-gray-200 text-gray-400'"
+              class="h-7 w-7 rounded-full flex items-center justify-center text-[11px] font-bold ring-4 ring-white shadow-sm transition-colors"
+              :class="getStatusStep(foundReport.status) >= index + 1 ? 'bg-forest-600 text-white' : 'bg-stone-200 text-stone-400'"
             >
               {{ index + 1 }}
             </div>
-            <span class="text-[10px] sm:text-xs font-bold text-gray-500 mt-2 bg-white px-1">{{ step }}</span>
+            <span class="text-[10px] sm:text-xs font-semibold text-stone-500 mt-2 bg-white px-1">{{ step }}</span>
           </div>
         </div>
       </div>
 
-      <div class="mt-6 flex flex-col sm:flex-row gap-3">
+      <div class="mt-5 flex flex-col sm:flex-row gap-3">
         <button
           @click="handleViewDetail"
-          class="flex-1 bg-brand-green text-white font-bold py-3 px-5 rounded-lg hover:bg-brand-green-light transition-colors"
+          class="flex-1 bg-forest-600 text-white font-semibold py-2.5 px-5 rounded-lg hover:bg-forest-700 transition-colors text-sm"
         >
           Lihat Detail Laporan
         </button>
         <button
           @click="router.push({ name: 'Lapor' })"
-          class="flex-1 bg-gray-100 text-gray-700 font-bold py-3 px-5 rounded-lg hover:bg-gray-200 transition-colors"
+          class="flex-1 bg-stone-100 text-stone-700 font-semibold py-2.5 px-5 rounded-lg hover:bg-stone-200 transition-colors text-sm"
         >
           Buat Laporan Baru
         </button>
       </div>
     </div>
 
-    <div class="mt-6 bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-800">
+    <div class="mt-5 bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-800">
       <strong>Keadaan darurat?</strong>
       Jika satwa masih mengancam keselamatan, jangan menunggu status portal. Segera hubungi WhatsApp 0813-7474-2981.
     </div>

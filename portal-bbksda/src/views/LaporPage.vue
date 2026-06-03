@@ -395,22 +395,22 @@ const submitLaporan = async () => {
     <!-- ===== SUCCESS STATE ===== -->
     <div
       v-else-if="submittedTicketId"
-      class="bg-white p-8 sm:p-12 rounded-lg shadow-sm border border-green-200 text-center"
+      class="bg-white p-8 sm:p-12 rounded-lg shadow-sm border border-forest-200 text-center"
     >
-      <div class="mx-auto w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mb-6">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" d="M5 13l4 4L19 7" />
+      <div class="mx-auto w-16 h-16 rounded-full bg-forest-50 flex items-center justify-center mb-5">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-forest-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M5 13l4 4L19 7" />
         </svg>
       </div>
 
-      <h2 class="text-2xl sm:text-3xl font-bold text-gray-800 mb-3">Laporan Berhasil Dikirim</h2>
-      <p class="text-gray-500 max-w-xl mx-auto mb-6">
+      <h2 class="text-2xl sm:text-3xl font-bold text-stone-800 mb-3">Laporan Berhasil Dikirim</h2>
+      <p class="text-stone-500 max-w-xl mx-auto mb-6 text-sm">
         Catat atau simpan ID Tiket berikut untuk mengecek status laporan Anda di halaman Laporan Saya.
       </p>
 
-      <div class="bg-green-50 border border-green-200 rounded-xl px-5 py-6 mb-6 max-w-md mx-auto">
-        <p class="text-xs font-bold text-green-700 uppercase tracking-wider mb-2">ID Tiket Laporan</p>
-        <p class="text-2xl sm:text-3xl font-mono font-extrabold text-brand-green break-all">
+      <div class="bg-forest-50 border border-forest-200 rounded-xl px-5 py-5 mb-6 max-w-md mx-auto">
+        <p class="text-xs font-semibold text-forest-700 uppercase tracking-wider mb-2">ID Tiket Laporan</p>
+        <p class="text-2xl sm:text-3xl font-mono font-extrabold text-forest-700 break-all">
           {{ submittedTicketId }}
         </p>
       </div>
@@ -418,13 +418,13 @@ const submitLaporan = async () => {
       <div class="flex flex-col sm:flex-row gap-3 justify-center">
         <button
           @click="goToTracking"
-          class="bg-brand-green text-white font-semibold py-3 px-6 rounded-md hover:bg-brand-green-light transition-colors"
+          class="bg-forest-600 text-white font-semibold py-2.5 px-6 rounded-lg hover:bg-forest-700 transition-colors text-sm"
         >
           Pantau Status Laporan
         </button>
         <button
           @click="copyTicketId"
-          class="bg-gray-100 text-gray-700 font-semibold py-3 px-6 rounded-md hover:bg-gray-200 transition-colors"
+          class="bg-stone-100 text-stone-700 font-semibold py-2.5 px-6 rounded-lg hover:bg-stone-200 transition-colors text-sm"
         >
           Salin ID Tiket
         </button>
@@ -475,9 +475,9 @@ const submitLaporan = async () => {
         </div>
       </div>
       
-      <div class="bg-white p-5 sm:p-8 md:p-10 rounded-lg border border-gray-200 shadow-sm">
-        <h2 class="text-2xl sm:text-3xl font-bold mb-2 text-center text-brand-green">Formulir Laporan Konflik Satwa</h2>
-        <p class="text-center text-gray-500 mb-8 text-sm sm:text-base">Isi data di bawah ini selengkap mungkin agar petugas dapat memahami dan merespons kejadian secara tepat.</p>
+      <div class="bg-white p-5 sm:p-8 md:p-10 rounded-lg border border-stone-200 shadow-sm">
+        <h2 class="text-xl sm:text-2xl font-bold mb-2 text-center text-stone-800">Formulir Laporan Konflik Satwa</h2>
+        <p class="text-center text-stone-500 mb-8 text-sm">Isi data di bawah ini selengkap mungkin agar petugas dapat memahami dan merespons kejadian secara tepat.</p>
 
         <form @submit.prevent="validateAndSubmit" novalidate>
           <div class="space-y-8">
@@ -485,7 +485,7 @@ const submitLaporan = async () => {
             <!-- KELOMPOK VISUAL 1: DATA PELAPOR -->
             <div class="border-b border-gray-100 pb-6">
               <div class="flex items-center gap-2.5 mb-5">
-                <div class="h-5 w-1 bg-brand-green rounded-full"></div>
+                <div class="h-5 w-1 bg-forest-500 rounded-full"></div>
                 <h3 class="text-base font-bold text-gray-800 uppercase tracking-wide">1. Identitas Pelapor</h3>
               </div>
               
@@ -498,7 +498,7 @@ const submitLaporan = async () => {
                     type="text"
                     v-model="newLaporan.nama"
                     id="nama"
-                    class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-green-light focus:border-brand-green-light transition-all outline-none"
+                    class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-forest-300 focus:border-forest-500 transition-all outline-none"
                     :class="{ 'border-red-500 focus:ring-red-200 focus:border-red-500': errors.nama }"
                     placeholder="Tuliskan nama lengkap Anda"
                   />
@@ -513,7 +513,7 @@ const submitLaporan = async () => {
                     type="tel"
                     v-model="newLaporan.telepon"
                     id="telepon"
-                    class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-green-light focus:border-brand-green-light transition-all outline-none"
+                    class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-forest-300 focus:border-forest-500 transition-all outline-none"
                     :class="{ 'border-red-500 focus:ring-red-200 focus:border-red-500': errors.telepon }"
                     placeholder="Contoh: 081234567890"
                   />
@@ -525,7 +525,7 @@ const submitLaporan = async () => {
             <!-- KELOMPOK VISUAL 2: INFORMASI KEJADIAN -->
             <div class="border-b border-gray-100 pb-6">
               <div class="flex items-center gap-2.5 mb-5">
-                <div class="h-5 w-1 bg-brand-green rounded-full"></div>
+                <div class="h-5 w-1 bg-forest-500 rounded-full"></div>
                 <h3 class="text-base font-bold text-gray-800 uppercase tracking-wide">2. Informasi Kejadian Konflik</h3>
               </div>
 
@@ -539,7 +539,7 @@ const submitLaporan = async () => {
                       type="date"
                       v-model="newLaporan.tanggal"
                       id="tanggal"
-                      class="date-input-ios w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-green-light focus:border-brand-green-light transition-all outline-none"
+                      class="date-input-ios w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-forest-300 focus:border-forest-500 transition-all outline-none"
                       :class="{ 'border-red-500 focus:ring-red-200 focus:border-red-500': errors.tanggal }"
                     />
                     <p v-if="errors.tanggal" class="text-red-600 text-xs font-semibold mt-1">{{ errors.tanggal }}</p>
@@ -552,7 +552,7 @@ const submitLaporan = async () => {
                     <select
                       v-model="newLaporan.jenisSatwa"
                       id="satwa"
-                      class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-green-light focus:border-brand-green-light bg-white transition-all outline-none"
+                      class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-forest-300 focus:border-forest-500 bg-white transition-all outline-none"
                       :class="{ 'border-red-500 focus:ring-red-200 focus:border-red-500': errors.jenisSatwa }"
                     >
                       <option disabled value="">Pilih jenis satwa</option>
@@ -569,7 +569,7 @@ const submitLaporan = async () => {
                   <select
                     v-model="newLaporan.kategoriKonflik"
                     id="kategori-konflik"
-                    class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-green-light focus:border-brand-green-light bg-white transition-all outline-none"
+                    class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-forest-300 focus:border-forest-500 bg-white transition-all outline-none"
                     :class="{ 'border-red-500 focus:ring-red-200 focus:border-red-500': errors.kategoriKonflik }"
                   >
                     <option disabled value="">Pilih kategori konflik</option>
@@ -589,7 +589,7 @@ const submitLaporan = async () => {
                   <select
                     v-model="newLaporan.prioritas"
                     id="prioritas"
-                    class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-green-light focus:border-brand-green-light bg-white transition-all outline-none"
+                    class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-forest-300 focus:border-forest-500 bg-white transition-all outline-none"
                     :class="{ 'border-red-500 focus:ring-red-200 focus:border-red-500': errors.prioritas }"
                   >
                     <option disabled value="">Tingkat kemendesakan kondisi</option>
@@ -598,7 +598,7 @@ const submitLaporan = async () => {
                     <option value="Tinggi">Tinggi (Satwa dekat permukiman atau ternak)</option>
                     <option value="Darurat">Darurat (Ada korban atau satwa masih berada di lokasi warga)</option>
                   </select>
-                  <p class="text-brand-green font-medium text-[11px] mt-1.5 bg-green-50 border border-green-100 p-2 rounded-md leading-relaxed">
+                  <p class="text-forest-700 font-medium text-[11px] mt-1.5 bg-forest-50 border border-forest-100 p-2 rounded-md leading-relaxed">
                     <strong>Keterangan:</strong> {{ prioritasHelp[newLaporan.prioritas] || '' }}
                   </p>
                   <p v-if="errors.prioritas" class="text-red-600 text-xs font-semibold mt-1">
@@ -611,7 +611,7 @@ const submitLaporan = async () => {
             <!-- KELOMPOK VISUAL 3: LOKASI KEJADIAN -->
             <div class="border-b border-gray-100 pb-6">
               <div class="flex items-center gap-2.5 mb-5">
-                <div class="h-5 w-1 bg-brand-green rounded-full"></div>
+                <div class="h-5 w-1 bg-forest-500 rounded-full"></div>
                 <h3 class="text-base font-bold text-gray-800 uppercase tracking-wide">3. Lokasi Konflik</h3>
               </div>
 
@@ -623,7 +623,7 @@ const submitLaporan = async () => {
                   <select
                     v-model="newLaporan.kabupatenKota"
                     id="kabupatenKota"
-                    class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-green-light focus:border-brand-green-light bg-white transition-all outline-none"
+                    class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-forest-300 focus:border-forest-500 bg-white transition-all outline-none"
                     :class="{ 'border-red-500 focus:ring-red-200 focus:border-red-500': errors.kabupatenKota }"
                   >
                     <option disabled value="">Pilih Kabupaten/Kota di wilayah Riau</option>
@@ -642,7 +642,7 @@ const submitLaporan = async () => {
                     type="text"
                     v-model="newLaporan.lokasi"
                     id="lokasi"
-                    class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-green-light focus:border-brand-green-light transition-all outline-none"
+                    class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-forest-300 focus:border-forest-500 transition-all outline-none"
                     :class="{ 'border-red-500 focus:ring-red-200 focus:border-red-500': errors.lokasi }"
                     placeholder="Contoh: Jl. Merdeka RT 02/RW 03, sebelah Mushola Al-Ikhlas"
                   />
@@ -692,8 +692,8 @@ const submitLaporan = async () => {
             <!-- KELOMPOK VISUAL 4: BUKTI & KRONOLOGI -->
             <div>
               <div class="flex items-center gap-2.5 mb-5">
-                <div class="h-5 w-1 bg-brand-green rounded-full"></div>
-                <h3 class="text-base font-bold text-gray-800 uppercase tracking-wide">4. Bukti Foto/Video & Deskripsi</h3>
+                <div class="h-5 w-1 bg-forest-500 rounded-full"></div>
+                <h3 class="text-base font-bold text-gray-800 uppercase tracking-wide">4. Bukti Foto/Video &amp; Deskripsi</h3>
               </div>
 
               <div class="space-y-5">
@@ -749,7 +749,7 @@ const submitLaporan = async () => {
                     v-model="newLaporan.deskripsi"
                     id="deskripsi"
                     rows="4"
-                    class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-green-light focus:border-brand-green-light transition-all outline-none text-sm"
+                    class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-forest-300 focus:border-forest-500 transition-all outline-none text-sm"
                     :class="{ 'border-red-500 focus:ring-red-200 focus:border-red-500': errors.deskripsi }"
                     placeholder="Contoh: Terlihat 1 ekor gajah sumatera jantan melintas di dekat ladang sawit warga pukul 15.00 WIB. Satwa merusak beberapa pagar pembatas kebun dan bergerak lambat ke arah selatan hutan penyangga."
                   ></textarea>
@@ -762,13 +762,13 @@ const submitLaporan = async () => {
 
           <!-- SUBMIT ACTIONS -->
           <div class="mt-8 pt-6 border-t border-gray-100 flex flex-col items-center sm:items-end gap-3 text-center sm:text-right">
-            <span class="text-xs text-gray-500 italic bg-gray-50 px-3 py-1.5 rounded-md border border-gray-200">
+            <span class="text-xs text-stone-500 italic bg-stone-50 px-3 py-1.5 rounded-md border border-stone-200">
               Pastikan data yang dikirim sudah sesuai sebelum melanjutkan.
             </span>
             <button
               type="submit"
               :disabled="isSubmitting"
-              class="w-full sm:w-auto bg-brand-green text-white font-bold py-3.5 px-10 rounded-md hover:bg-brand-green-light transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm uppercase"
+              class="w-full sm:w-auto bg-forest-600 text-white font-bold py-3 px-10 rounded-lg hover:bg-forest-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm uppercase tracking-wide"
             >
               {{ isSubmitting ? 'Sedang Mengirim...' : 'Kirim Laporan Resmi' }}
             </button>

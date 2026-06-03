@@ -130,22 +130,22 @@ const isSubmitting = ref(false);
 
 <template>
   <div v-if="report" class="max-w-4xl mx-auto">
-    <button @click="navigateBack" class="text-brand-green-light hover:underline mb-6 flex items-center">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
+    <button @click="navigateBack" class="text-stone-500 hover:text-forest-700 hover:underline mb-6 flex items-center gap-1.5 text-sm font-medium transition-colors">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
       Kembali ke Daftar Laporan
     </button>
     
-    <div ref="reportPdfContent" class="bg-white p-8 rounded-lg border border-gray-200 shadow-sm">
-      <div class="flex justify-between items-start mb-6 border-b pb-6">
+    <div ref="reportPdfContent" class="bg-white p-6 sm:p-8 rounded-xl border border-stone-200 shadow-sm">
+      <div class="flex justify-between items-start mb-5 border-b border-stone-100 pb-5">
         <div>
-          <h2 class="text-4xl font-bold text-brand-green">{{ report.jenisSatwa }}</h2>
-          <p class="text-gray-500 mt-1">ID Laporan: {{ report.idLaporan || report.id }}</p>
+          <h2 class="text-3xl font-bold text-stone-800">{{ report.jenisSatwa }}</h2>
+          <p class="text-stone-500 mt-1 text-sm">ID Laporan: <span class="font-mono font-semibold text-forest-700">{{ report.idLaporan || report.id }}</span></p>
         </div>
         <div class="flex flex-col items-end gap-2">
-          <span :class="prioritasClass(report.prioritas)" class="text-sm px-3 py-1 rounded-full border">
+          <span :class="prioritasClass(report.prioritas)" class="text-xs px-2.5 py-1 rounded-full border">
             Prioritas: {{ report.prioritas || 'Sedang' }}
           </span>
-          <span :class="statusClass(report.status)" class="text-base font-semibold px-4 py-2 rounded-full">{{ report.status }}</span>
+          <span :class="statusClass(report.status)" class="text-sm font-semibold px-3 py-1.5 rounded-full">{{ report.status }}</span>
         </div>
       </div>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 mt-6">
@@ -199,30 +199,37 @@ const isSubmitting = ref(false);
         </div>
       </div>
 
-      <div v-if="reversedHistory.length > 0" class="mt-8 border-t pt-6">
-        <h4 class="font-semibold text-lg text-gray-800 mb-4">Riwayat Penanganan Laporan</h4>
-        <ol class="relative border-l border-gray-200">
-          <li v-for="(item, index) in reversedHistory" :key="index" class="mb-8 ml-6">
-            <span class="absolute flex items-center justify-center w-6 h-6 bg-blue-100 rounded-full -left-3 ring-8 ring-white">
-              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-blue-800" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.414-1.415L11 9.586V6z" clip-rule="evenodd" /></svg>
+      <div v-if="reversedHistory.length > 0" class="mt-6 border-t border-stone-100 pt-5">
+        <h4 class="font-semibold text-base text-stone-700 mb-4">Riwayat Penanganan Laporan</h4>
+        <ol class="relative border-l border-stone-200 ml-2">
+          <li v-for="(item, index) in reversedHistory" :key="index" class="mb-6 ml-5">
+            <span class="absolute flex items-center justify-center w-5 h-5 bg-forest-50 rounded-full -left-2.5 ring-4 ring-white border border-forest-200">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 text-forest-700" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.414-1.415L11 9.586V6z" clip-rule="evenodd" /></svg>
             </span>
-            <h5 class="flex items-center mb-1 text-base font-semibold text-gray-900">
-              Status: <span :class="statusClass(item.status)" class="ml-2 text-sm font-semibold px-2 py-0.5 rounded-full">{{ item.status }}</span>
+            <h5 class="flex items-center mb-0.5 text-sm font-semibold text-stone-800">
+              Status: <span :class="statusClass(item.status)" class="ml-2 text-xs font-semibold px-2 py-0.5 rounded-full">{{ item.status }}</span>
             </h5>
-            <time class="block mb-2 text-sm font-normal leading-none text-gray-400">{{ formatDate(item.timestamp) }}</time>
-            <p v-if="item.updatedBy" class="text-sm text-gray-500">Oleh: <span class="font-medium">{{ item.updatedBy }}</span></p>
-            <p v-if="item.notes" class="mt-1 text-sm p-2 bg-gray-100 rounded-md">Catatan: {{ item.notes }}</p>
+            <time class="block mb-1 text-xs font-normal text-stone-400">{{ formatDate(item.timestamp) }}</time>
+            <p v-if="item.updatedBy" class="text-xs text-stone-500">Oleh: <span class="font-medium">{{ item.updatedBy }}</span></p>
+            <p v-if="item.notes" class="mt-1 text-xs p-2 bg-stone-50 rounded-md text-stone-600">Catatan: {{ item.notes }}</p>
           </li>
         </ol>
       </div>
     </div>
     
-    <div v-if="authStore.user" class="bg-white p-8 rounded-lg border border-gray-200 shadow-sm mt-6">
-      <h3 class="text-xl font-bold mb-4 text-brand-green">Panel Admin</h3>
-      <div class="bg-gray-50 p-4 rounded-lg">
-        <label for="status-select" class="block text-sm font-semibold text-gray-700 mb-1">Ubah Status Laporan</label>
+    <div v-if="authStore.user" class="bg-white p-6 rounded-xl border border-stone-200 shadow-sm mt-4">
+      <h3 class="text-base font-bold mb-4 text-stone-800 flex items-center gap-2">
+        <!-- Settings/control icon -->
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-forest-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+        </svg>
+        Panel Admin
+      </h3>
+      <div class="bg-stone-50 p-4 rounded-lg border border-stone-100">
+        <label for="status-select" class="block text-sm font-semibold text-stone-700 mb-2">Ubah Status Laporan</label>
         <div class="flex flex-col sm:flex-row sm:items-center gap-3">
-          <select id="status-select" v-model="currentStatus" class="w-full sm:w-auto sm:min-w-[220px] px-4 py-2 border rounded-lg">
+          <select id="status-select" v-model="currentStatus" class="w-full sm:w-auto sm:min-w-[220px] px-4 py-2 border border-stone-300 rounded-lg bg-white text-stone-700 text-sm focus:ring-2 focus:ring-forest-300 focus:border-forest-500 outline-none">
             <option value="Menunggu Verifikasi">Menunggu Verifikasi</option>
             <option v-if="currentStatus === 'pending'" value="pending">Pending (Lama)</option>
             <option value="Diterima">Diterima</option>
@@ -234,22 +241,22 @@ const isSubmitting = ref(false);
             <option value="Ditolak">Ditolak</option>
             <option v-if="currentStatus === 'Tidak Valid'" value="Tidak Valid">Tidak Valid (Lama)</option>
           </select>
-          <button @click="updateLaporanStatus" :disabled="isSubmitting" class="w-full sm:w-auto bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700 disabled:bg-gray-400">{{ isSubmitting ? 'Menyimpan...' : 'Simpan' }}</button>
+          <button @click="updateLaporanStatus" :disabled="isSubmitting" class="w-full sm:w-auto bg-forest-600 text-white font-semibold py-2 px-5 rounded-lg hover:bg-forest-700 disabled:bg-stone-400 transition-colors text-sm">{{ isSubmitting ? 'Menyimpan...' : 'Simpan' }}</button>
         </div>
         <div class="mt-4">
-          <label for="admin-notes" class="block text-sm font-semibold text-gray-700 mb-1">Tambah Catatan</label>
-          <input type="text" v-model="adminNotes" id="admin-notes" placeholder="Contoh: Tim patroli sudah dikirim." class="w-full px-4 py-2 border rounded-lg">
+          <label for="admin-notes" class="block text-sm font-semibold text-stone-700 mb-1">Tambah Catatan</label>
+          <input type="text" v-model="adminNotes" id="admin-notes" placeholder="Contoh: Tim patroli sudah dikirim." class="w-full px-4 py-2 border border-stone-300 rounded-lg bg-white text-sm focus:ring-2 focus:ring-forest-300 focus:border-forest-500 outline-none">
         </div>
       </div>
-      <div class="mt-6 flex flex-col sm:flex-row sm:justify-end gap-2">
-        <button @click="downloadPDF" class="w-full sm:w-auto bg-gray-700 text-white font-bold py-2 px-5 rounded-lg hover:bg-gray-800">
+      <div class="mt-4 flex flex-col sm:flex-row sm:justify-end gap-2">
+        <button @click="downloadPDF" class="w-full sm:w-auto bg-stone-700 text-white font-semibold py-2 px-5 rounded-lg hover:bg-stone-800 transition-colors text-sm">
           <span>Download Laporan (PDF)</span>
         </button>
       </div>
     </div>
   </div>
   <div v-else class="text-center p-10">
-    <p class="text-lg text-gray-600">Laporan tidak ditemukan.</p>
-    <button @click="navigateBack" class="mt-4 bg-green-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-700">Kembali</button>
+    <p class="text-base text-stone-500">Laporan tidak ditemukan.</p>
+    <button @click="navigateBack" class="mt-4 bg-forest-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-forest-700 transition-colors text-sm">Kembali</button>
   </div>
 </template>

@@ -60,7 +60,21 @@ export default {
         'brand-green-light': '#6A994E',
         'brand-accent': '#A7C957',
         'brand-brown': '#A77B0E',
-        'brand-bg': '#fafafa',
+        'brand-bg': '#f8f7f5',
+
+        // Calmer forest green for revised UI
+        'forest': {
+          50:  '#f2f7f4',
+          100: '#ddeee4',
+          200: '#baddc9',
+          300: '#8ec4a8',
+          400: '#60a683',
+          500: '#4a7c59', // main calm forest green
+          600: '#3a6347',
+          700: '#2f5039',
+          800: '#273f2e',
+          900: '#1f3325',
+        },
       },
 
       // 📝 Typography

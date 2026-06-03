@@ -412,42 +412,42 @@ const prioritasClass = (p) => {
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-3">
       <div>
-        <h2 class="text-2xl sm:text-3xl font-bold text-brand-green mb-1 sm:mb-2">Kelola Laporan</h2>
-        <p class="text-gray-600 text-sm sm:text-base">
+        <h2 class="text-2xl sm:text-3xl font-bold text-stone-800 mb-1">Kelola Laporan</h2>
+        <p class="text-stone-500 text-sm">
           Menampilkan
-          <span class="font-semibold text-primary-600">{{ visibleReports.length }}</span>
+          <span class="font-semibold text-forest-700">{{ visibleReports.length }}</span>
           dari {{ reportsStore.reports.length }} laporan
         </p>
       </div>
 
       <!-- View Mode Toggle (Desktop) -->
-      <div class="hidden sm:flex items-center space-x-2">
+      <div class="hidden sm:flex items-center gap-1 border border-stone-200 rounded-lg p-1 bg-stone-50">
         <button
           @click="viewMode = 'grid'"
-          :class="viewMode === 'grid' ? 'bg-primary-500 text-white' : 'bg-gray-100 text-gray-600'"
-          class="px-4 py-2 rounded-md transition-colors border"
+          :class="viewMode === 'grid' ? 'bg-white text-forest-700 shadow-sm' : 'text-stone-500 hover:text-stone-700'"
+          class="px-3 py-1.5 rounded-md transition-all text-sm"
+          title="Tampilan Grid"
         >
-          <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
-            />
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7"/>
+            <rect x="14" y="3" width="7" height="7"/>
+            <rect x="3" y="14" width="7" height="7"/>
+            <rect x="14" y="14" width="7" height="7"/>
           </svg>
         </button>
         <button
           @click="viewMode = 'list'"
-          :class="viewMode === 'list' ? 'bg-primary-500 text-white' : 'bg-gray-100 text-gray-600'"
-          class="px-4 py-2 rounded-md transition-colors border"
+          :class="viewMode === 'list' ? 'bg-white text-forest-700 shadow-sm' : 'text-stone-500 hover:text-stone-700'"
+          class="px-3 py-1.5 rounded-md transition-all text-sm"
+          title="Tampilan Daftar"
         >
-          <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M4 6h16M4 12h16M4 18h16"
-            />
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <line x1="8" y1="6" x2="21" y2="6"/>
+            <line x1="8" y1="12" x2="21" y2="12"/>
+            <line x1="8" y1="18" x2="21" y2="18"/>
+            <line x1="3" y1="6" x2="3.01" y2="6"/>
+            <line x1="3" y1="12" x2="3.01" y2="12"/>
+            <line x1="3" y1="18" x2="3.01" y2="18"/>
           </svg>
         </button>
       </div>
@@ -455,29 +455,29 @@ const prioritasClass = (p) => {
 
     <!-- Ringkasan Status -->
     <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 mb-6">
-      <div class="bg-white border border-gray-200 rounded-lg p-4">
-        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Menunggu</p>
-        <p class="mt-1 text-2xl font-bold text-yellow-700">{{ reportSummary.pending }}</p>
+      <div class="bg-white border border-stone-200 rounded-lg p-3.5">
+        <p class="text-xs font-semibold text-stone-500 uppercase tracking-wide">Menunggu</p>
+        <p class="mt-1 text-xl font-bold text-amber-700">{{ reportSummary.pending }}</p>
       </div>
-      <div class="bg-white border border-gray-200 rounded-lg p-4">
-        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Diterima</p>
-        <p class="mt-1 text-2xl font-bold text-blue-700">{{ reportSummary.accepted }}</p>
+      <div class="bg-white border border-stone-200 rounded-lg p-3.5">
+        <p class="text-xs font-semibold text-stone-500 uppercase tracking-wide">Diterima</p>
+        <p class="mt-1 text-xl font-bold text-sky-700">{{ reportSummary.accepted }}</p>
       </div>
-      <div class="bg-white border border-gray-200 rounded-lg p-4">
-        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Proses</p>
-        <p class="mt-1 text-2xl font-bold text-indigo-700">{{ reportSummary.process }}</p>
+      <div class="bg-white border border-stone-200 rounded-lg p-3.5">
+        <p class="text-xs font-semibold text-stone-500 uppercase tracking-wide">Proses</p>
+        <p class="mt-1 text-xl font-bold text-indigo-600">{{ reportSummary.process }}</p>
       </div>
-      <div class="bg-white border border-gray-200 rounded-lg p-4">
-        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Selesai</p>
-        <p class="mt-1 text-2xl font-bold text-green-700">{{ reportSummary.completed }}</p>
+      <div class="bg-white border border-stone-200 rounded-lg p-3.5">
+        <p class="text-xs font-semibold text-stone-500 uppercase tracking-wide">Selesai</p>
+        <p class="mt-1 text-xl font-bold text-forest-700">{{ reportSummary.completed }}</p>
       </div>
-      <div class="bg-white border border-gray-200 rounded-lg p-4">
-        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Tidak Valid</p>
-        <p class="mt-1 text-2xl font-bold text-red-700">{{ reportSummary.rejected }}</p>
+      <div class="bg-white border border-stone-200 rounded-lg p-3.5">
+        <p class="text-xs font-semibold text-stone-500 uppercase tracking-wide">Tidak Valid</p>
+        <p class="mt-1 text-xl font-bold text-rose-700">{{ reportSummary.rejected }}</p>
       </div>
-      <div class="bg-white border border-gray-200 rounded-lg p-4">
-        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Mencurigakan</p>
-        <p class="mt-1 text-2xl font-bold text-gray-800">{{ reportSummary.suspicious }}</p>
+      <div class="bg-white border border-stone-200 rounded-lg p-3.5">
+        <p class="text-xs font-semibold text-stone-500 uppercase tracking-wide">Mencurigakan</p>
+        <p class="mt-1 text-xl font-bold text-stone-700">{{ reportSummary.suspicious }}</p>
       </div>
     </div>
 
@@ -768,96 +768,96 @@ const prioritasClass = (p) => {
     </div>
 
     <!-- List View -->
-    <div v-else-if="viewMode === 'list'" class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+    <div v-else-if="viewMode === 'list'" class="bg-white rounded-lg border border-stone-200 shadow-sm overflow-hidden">
       <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
+        <table class="min-w-full divide-y divide-stone-100">
+          <thead class="bg-stone-50">
             <tr>
-              <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+              <th class="px-5 py-3 text-left text-xs font-semibold text-stone-500 uppercase tracking-wider">
                 ID
               </th>
-              <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+              <th class="px-5 py-3 text-left text-xs font-semibold text-stone-500 uppercase tracking-wider">
                 Pelapor
               </th>
-              <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+              <th class="px-5 py-3 text-left text-xs font-semibold text-stone-500 uppercase tracking-wider">
                 Jenis Satwa
               </th>
-              <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+              <th class="px-5 py-3 text-left text-xs font-semibold text-stone-500 uppercase tracking-wider">
                 Kategori
               </th>
-              <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+              <th class="px-5 py-3 text-left text-xs font-semibold text-stone-500 uppercase tracking-wider">
                 Lokasi
               </th>
-              <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+              <th class="px-5 py-3 text-left text-xs font-semibold text-stone-500 uppercase tracking-wider">
                 Tanggal
               </th>
-              <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+              <th class="px-5 py-3 text-left text-xs font-semibold text-stone-500 uppercase tracking-wider">
                 Prioritas
               </th>
-              <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+              <th class="px-5 py-3 text-left text-xs font-semibold text-stone-500 uppercase tracking-wider">
                 Status
               </th>
-              <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+              <th class="px-5 py-3 text-left text-xs font-semibold text-stone-500 uppercase tracking-wider">
                 Aksi
               </th>
             </tr>
           </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
+          <tbody class="bg-white divide-y divide-stone-100">
             <tr
               v-for="report in displayedReports"
               :key="report.id"
-              class="hover:bg-gray-50 transition-colors cursor-pointer"
-              :class="{ 'bg-red-50': isSuspicious(report) }"
+              class="hover:bg-stone-50 transition-colors cursor-pointer"
+              :class="{ 'bg-red-50/50': isSuspicious(report) }"
               @click="handleViewDetail(report.id)"
             >
-              <td class="px-6 py-4 whitespace-nowrap text-sm font-mono font-bold text-primary-600">
+              <td class="px-5 py-3.5 whitespace-nowrap text-sm font-mono font-semibold text-forest-700">
                 {{ report.idLaporan }}
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+              <td class="px-5 py-3.5 whitespace-nowrap text-sm text-stone-800">
                 <div class="flex items-center gap-2">
                   {{ report.nama }}
                   <span
                     v-if="isSuspicious(report)"
-                    class="inline-flex items-center gap-1 bg-red-100 text-red-700 text-xs font-bold px-2 py-0.5 rounded-full border border-red-200"
+                    class="inline-flex items-center gap-1 bg-red-100 text-red-700 text-xs font-semibold px-2 py-0.5 rounded-full border border-red-200"
                     :title="`Nomor ${report.telepon} telah mengirim ${SUSPICIOUS_THRESHOLD}+ laporan dalam ${SUSPICIOUS_WINDOW_DAYS} hari`"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                     </svg>
                     !
                   </span>
                 </div>
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+              <td class="px-5 py-3.5 whitespace-nowrap text-sm text-stone-600">
                 {{ report.jenisSatwa }}
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+              <td class="px-5 py-3.5 whitespace-nowrap text-sm text-stone-600">
                 {{ report.kategoriKonflik || '-' }}
               </td>
-              <td class="px-6 py-4 text-sm text-gray-600 max-w-xs truncate">
+              <td class="px-5 py-3.5 text-sm text-stone-600 max-w-xs truncate">
                 {{ report.lokasi || '-' }}
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+              <td class="px-5 py-3.5 whitespace-nowrap text-sm text-stone-500">
                 {{ formatDate(report.createdAt) }}
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm">
+              <td class="px-5 py-3.5 whitespace-nowrap text-sm">
                 <span :class="prioritasClass(report.prioritas)" class="px-2 py-1 text-xs rounded-full border">
                   {{ report.prioritas || 'Sedang' }}
                 </span>
               </td>
-              <td class="px-6 py-4 whitespace-nowrap">
+              <td class="px-5 py-3.5 whitespace-nowrap">
                 <UiBadge :status="report.status" size="sm" />
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm">
+              <td class="px-5 py-3.5 whitespace-nowrap text-sm">
                 <button
                   @click.stop="handleViewDetail(report.id)"
-                  class="text-primary-600 hover:text-primary-800 font-medium"
+                  class="text-forest-700 hover:text-forest-900 font-semibold text-xs"
                 >
                   Detail
                 </button>
                 <button
                   @click.stop="openVerification(report)"
-                  class="ml-3 text-secondary-600 hover:text-secondary-800 font-medium"
+                  class="ml-3 text-stone-600 hover:text-stone-900 font-semibold text-xs"
                 >
                   Periksa
                 </button>
@@ -1004,12 +1004,12 @@ const prioritasClass = (p) => {
         dari {{ visibleReports.length }} laporan
       </p>
 
-      <div class="flex items-center space-x-2">
+      <div class="flex items-center space-x-1.5">
         <!-- Previous Button -->
         <button
           @click="goToPage(reportsStore.pagination.currentPage - 1)"
           :disabled="reportsStore.pagination.currentPage === 1"
-          class="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          class="px-3 py-2 rounded-lg border border-stone-300 text-stone-600 text-sm hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
           Sebelumnya
         </button>
@@ -1020,10 +1020,10 @@ const prioritasClass = (p) => {
           :key="page"
           @click="goToPage(page)"
           :class="[
-            'px-4 py-2 rounded-lg transition-colors',
+            'px-3 py-2 rounded-lg text-sm transition-colors',
             page === reportsStore.pagination.currentPage
-              ? 'bg-primary-500 text-white'
-              : 'border border-gray-300 text-gray-700 hover:bg-gray-50',
+              ? 'bg-forest-600 text-white'
+              : 'border border-stone-300 text-stone-600 hover:bg-stone-50',
           ]"
         >
           {{ page }}
@@ -1033,7 +1033,7 @@ const prioritasClass = (p) => {
         <button
           @click="goToPage(reportsStore.pagination.currentPage + 1)"
           :disabled="reportsStore.pagination.currentPage === visibleTotalPages"
-          class="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          class="px-3 py-2 rounded-lg border border-stone-300 text-stone-600 text-sm hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
           Berikutnya
         </button>

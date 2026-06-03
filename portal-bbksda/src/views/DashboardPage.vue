@@ -405,18 +405,21 @@ const statsPenanganan = computed(() => {
   <div>
     <!-- HEADER -->
     <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-3">
-      <h2 class="text-2xl sm:text-3xl font-bold text-brand-green">Statistik</h2>
+      <div>
+        <h2 class="text-2xl sm:text-3xl font-bold text-stone-800">Statistik</h2>
+        <p class="text-stone-500 text-sm mt-0.5">Ringkasan data laporan konflik satwa</p>
+      </div>
 
       <div class="flex flex-col xs:flex-row items-stretch xs:items-center gap-2 sm:gap-3">
         <input
           type="month"
           v-model="selectedMonth"
-          class="month-input-ios w-full xs:w-auto px-3 py-2 border rounded-lg focus:ring-brand-green-light focus:border-brand-green-light text-sm"
+          class="month-input-ios w-full xs:w-auto px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-forest-300 focus:border-forest-500 outline-none text-sm bg-white"
         />
 
         <button
           @click="router.push({ name: 'RekapBulanan' })"
-          class="w-full xs:w-auto bg-brand-green text-white font-bold py-2 px-4 sm:px-5 rounded-lg hover:bg-brand-green-light transition-colors text-sm sm:text-base"
+          class="w-full xs:w-auto bg-forest-600 text-white font-semibold py-2 px-4 sm:px-5 rounded-lg hover:bg-forest-700 transition-colors text-sm"
         >
           Buat Rekap Bulanan
         </button>
@@ -458,22 +461,25 @@ const statsPenanganan = computed(() => {
     </div>
 
     <!-- INSIGHT OTOMATIS -->
-    <div class="bg-white border border-gray-200 p-5 sm:p-6 rounded-lg shadow-sm mb-8">
+    <div class="bg-white border border-stone-200 p-5 sm:p-6 rounded-lg shadow-sm mb-8">
       <div class="flex items-center gap-3 mb-4">
-        <div class="bg-primary-50 text-brand-green p-2 rounded-md border border-primary-100">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+        <div class="bg-forest-50 text-forest-700 p-2 rounded-md border border-forest-200">
+          <!-- Bar chart icon — practical, not AI -->
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+            <rect x="3" y="12" width="4" height="9"/>
+            <rect x="10" y="7" width="4" height="14"/>
+            <rect x="17" y="3" width="4" height="18"/>
           </svg>
         </div>
-        <h3 class="font-bold text-lg text-brand-green">Ringkasan Analisis</h3>
+        <h3 class="font-bold text-base text-stone-800">Ringkasan Analisis</h3>
       </div>
       
-      <div v-if="dashboardInsights.length === 0" class="text-gray-500 italic">
+      <div v-if="dashboardInsights.length === 0" class="text-stone-400 italic text-sm">
         Belum cukup data untuk menampilkan insight pada periode ini.
       </div>
-      <ul v-else class="space-y-3">
-        <li v-for="(insight, index) in dashboardInsights" :key="index" class="flex items-start gap-2 text-gray-700">
-          <svg class="h-5 w-5 text-brand-green mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <ul v-else class="space-y-2.5">
+        <li v-for="(insight, index) in dashboardInsights" :key="index" class="flex items-start gap-2 text-stone-700 text-sm">
+          <svg class="h-4 w-4 text-forest-600 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <span v-html="insight" class="leading-relaxed"></span>
@@ -483,64 +489,65 @@ const statsPenanganan = computed(() => {
 
     <!-- GRAFIK UTAMA -->
     <div class="grid grid-cols-1 lg:grid-cols-6 gap-6">
-      <div class="lg:col-span-4 bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-        <h3 class="font-semibold text-lg mb-4">Laporan Valid per Jenis Satwa</h3>
+      <div class="lg:col-span-4 bg-white p-6 rounded-lg border border-stone-200 shadow-sm">
+        <h3 class="font-semibold text-base text-stone-700 mb-4">Laporan Valid per Jenis Satwa</h3>
         <BarChart :chart-data="laporanPerSatwa" />
       </div>
 
       <div class="lg:col-span-2 flex flex-col gap-6">
-        <div class="bg-white p-6 rounded-lg border border-gray-200 shadow-sm flex-1">
-          <h3 class="font-semibold text-lg mb-4">Proporsi Status Laporan</h3>
+        <div class="bg-white p-6 rounded-lg border border-stone-200 shadow-sm flex-1">
+          <h3 class="font-semibold text-base text-stone-700 mb-4">Proporsi Status Laporan</h3>
           <DoughnutChart :chart-data="laporanPerStatus" />
         </div>
-        <div class="bg-white p-6 rounded-lg border border-gray-200 shadow-sm flex-1">
-          <h3 class="font-semibold text-lg mb-4">Proporsi Prioritas Laporan</h3>
+        <div class="bg-white p-6 rounded-lg border border-stone-200 shadow-sm flex-1">
+          <h3 class="font-semibold text-base text-stone-700 mb-4">Proporsi Prioritas Laporan</h3>
           <DoughnutChart :chart-data="laporanPerPrioritas" />
         </div>
       </div>
     </div>
 
     <!-- POLA WAKTU -->
-    <div class="bg-white p-6 rounded-lg border border-gray-200 shadow-sm mt-6">
-      <h3 class="font-semibold text-lg mb-4">Pola Laporan Valid Berdasarkan Minggu</h3>
+    <div class="bg-white p-6 rounded-lg border border-stone-200 shadow-sm mt-6">
+      <h3 class="font-semibold text-base text-stone-700 mb-4">Pola Laporan Valid Berdasarkan Minggu</h3>
       <BarChart :chart-data="laporanPerMinggu" />
     </div>
 
     <!-- STATISTIK WAKTU PENANGANAN -->
-    <div class="bg-white p-6 rounded-lg border border-gray-200 shadow-sm mt-6">
-      <h3 class="font-semibold text-lg mb-4 flex items-center gap-2">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-brand-green" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+    <div class="bg-white p-6 rounded-lg border border-stone-200 shadow-sm mt-6">
+      <h3 class="font-semibold text-base text-stone-700 mb-4 flex items-center gap-2">
+        <!-- Clock icon -->
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-forest-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
         </svg>
         Kecepatan Penanganan Laporan
       </h3>
       
-      <div v-if="!statsPenanganan.hasData" class="text-gray-500 italic">
+      <div v-if="!statsPenanganan.hasData" class="text-stone-400 italic text-sm">
         Belum cukup data untuk menghitung rata-rata waktu penanganan pada periode ini.
       </div>
       <div v-else class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-        <div class="bg-blue-50 border border-blue-100 p-4 rounded-lg">
-          <p class="text-xs text-blue-600 font-bold uppercase tracking-wider mb-1">Rata-rata Penyelesaian</p>
-          <p class="text-xl font-bold text-blue-900">{{ statsPenanganan.avg }}</p>
+        <div class="bg-sky-50 border border-sky-100 p-4 rounded-lg">
+          <p class="text-xs text-sky-700 font-semibold uppercase tracking-wider mb-1">Rata-rata Penyelesaian</p>
+          <p class="text-xl font-bold text-sky-900">{{ statsPenanganan.avg }}</p>
         </div>
-        <div class="bg-green-50 border border-green-100 p-4 rounded-lg">
-          <p class="text-xs text-green-600 font-bold uppercase tracking-wider mb-1">Tercepat Selesai</p>
-          <p class="text-xl font-bold text-green-900">{{ statsPenanganan.min }}</p>
+        <div class="bg-forest-50 border border-forest-100 p-4 rounded-lg">
+          <p class="text-xs text-forest-700 font-semibold uppercase tracking-wider mb-1">Tercepat Selesai</p>
+          <p class="text-xl font-bold text-forest-900">{{ statsPenanganan.min }}</p>
         </div>
-        <div class="bg-orange-50 border border-orange-100 p-4 rounded-lg">
-          <p class="text-xs text-orange-600 font-bold uppercase tracking-wider mb-1">Paling Lama Selesai</p>
-          <p class="text-xl font-bold text-orange-900">{{ statsPenanganan.max }}</p>
+        <div class="bg-amber-50 border border-amber-100 p-4 rounded-lg">
+          <p class="text-xs text-amber-700 font-semibold uppercase tracking-wider mb-1">Paling Lama Selesai</p>
+          <p class="text-xl font-bold text-amber-900">{{ statsPenanganan.max }}</p>
         </div>
-        <div class="bg-red-50 border border-red-100 p-4 rounded-lg">
-          <p class="text-xs text-red-600 font-bold uppercase tracking-wider mb-1">Belum Selesai > 3 Hari</p>
-          <p class="text-xl font-bold text-red-900">{{ statsPenanganan.unresolved3Days }} Laporan</p>
+        <div class="bg-rose-50 border border-rose-100 p-4 rounded-lg">
+          <p class="text-xs text-rose-700 font-semibold uppercase tracking-wider mb-1">Belum Selesai &gt; 3 Hari</p>
+          <p class="text-xl font-bold text-rose-900">{{ statsPenanganan.unresolved3Days }} Laporan</p>
         </div>
       </div>
     </div>
 
     <!-- STATISTIK LOKASI -->
-    <div class="bg-white p-6 rounded-lg border border-gray-200 shadow-sm mt-6">
-      <h3 class="font-semibold text-lg mb-4">Laporan Valid Berdasarkan Lokasi</h3>
+    <div class="bg-white p-6 rounded-lg border border-stone-200 shadow-sm mt-6">
+      <h3 class="font-semibold text-base text-stone-700 mb-4">Laporan Valid Berdasarkan Lokasi</h3>
       <BarChart :chart-data="laporanPerLokasi" />
     </div>
   </div>

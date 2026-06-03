@@ -398,12 +398,12 @@ onMounted(() => {
 <style scoped>
 /* ── BASE ── */
 .home-page {
-  --green-900: #1b4332;
-  --green-700: #2d6a4f;
-  --green-500: #386641;
-  --green-400: #52b788;
-  --green-100: #d8f3dc;
-  --green-50: #f0faf3;
+  --green-900: #1b3a2a;
+  --green-700: #2f5039;
+  --green-500: #4a7c59;
+  --green-400: #60a683;
+  --green-100: #ddeee4;
+  --green-50: #f2f7f4;
   --gray-50: #f9fafb;
   --gray-100: #f3f4f6;
   --gray-200: #e5e7eb;
@@ -411,7 +411,7 @@ onMounted(() => {
   --gray-500: #6b7280;
   --gray-700: #374151;
   --gray-800: #1f2937;
-  --radius: 14px;
+  --radius: 12px;
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
   --shadow-md: 0 4px 14px rgba(0,0,0,0.08);
   --shadow-lg: 0 10px 30px rgba(0,0,0,0.1);
@@ -435,9 +435,9 @@ onMounted(() => {
   inset: 0;
   background: linear-gradient(
     160deg,
-    rgba(27, 67, 50, 0.92) 0%,
-    rgba(27, 67, 50, 0.75) 40%,
-    rgba(27, 67, 50, 0.55) 100%
+    rgba(22, 52, 38, 0.90) 0%,
+    rgba(27, 58, 42, 0.70) 40%,
+    rgba(27, 58, 42, 0.45) 100%
   );
 }
 
@@ -505,15 +505,15 @@ onMounted(() => {
 }
 
 .hp-btn-primary {
-  background: var(--green-400);
-  color: var(--green-900);
+  background: var(--green-500);
+  color: #fff;
   border: none;
-  box-shadow: 0 4px 15px rgba(82, 183, 136, 0.35);
+  box-shadow: 0 4px 12px rgba(74, 124, 89, 0.28);
 }
 .hp-btn-primary:hover {
-  background: #6ec89b;
+  background: var(--green-400);
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(82, 183, 136, 0.45);
+  box-shadow: 0 6px 18px rgba(74, 124, 89, 0.38);
 }
 
 .hp-btn-emergency {
@@ -676,14 +676,15 @@ onMounted(() => {
 }
 
 .hp-card-type-b {
-  border: 1.5px dashed #42a5f5;
-  background-color: #fafcff;
+  border: 1.5px solid var(--gray-200);
+  background-color: #fafaf9;
+  box-shadow: var(--shadow-sm);
 }
 .hp-card-type-b:hover {
   transform: translateY(-5px);
-  border-style: solid;
+  border-color: var(--green-400);
   background-color: #fff;
-  box-shadow: 0 8px 24px rgba(66, 165, 245, 0.08);
+  box-shadow: var(--shadow-md);
 }
 
 .hp-card-type-c {
