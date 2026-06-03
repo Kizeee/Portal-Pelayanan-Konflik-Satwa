@@ -319,8 +319,8 @@ const submitLaporan = async () => {
     </div>
 
     <!-- ===== FORM LAPORAN (normal) ===== -->
-    <div v-else class="bg-white p-5 sm:p-8 md:p-10 rounded-2xl shadow-lg">
-    <h2 class="text-2xl sm:text-3xl font-bold mb-2 text-center text-brand-green">Formulir Pengaduan Konflik</h2>
+    <div v-else class="bg-white p-5 sm:p-8 md:p-10 rounded-2xl shadow-md border border-gray-100">
+    <h2 class="text-2xl sm:text-3xl font-bold mb-2 text-center" style="color: #2D5A3D;">Formulir Pengaduan Konflik</h2>
     <p class="text-center text-gray-500 mb-6 sm:mb-8 text-sm sm:text-base">Isi formulir di bawah ini dengan data yang akurat.</p>
 
     <form @submit.prevent="validateAndSubmit" novalidate>
@@ -497,7 +497,7 @@ const submitLaporan = async () => {
         <button
           type="submit"
           :disabled="isSubmitting"
-          class="w-full sm:w-auto bg-gradient-to-r from-brand-green to-brand-green-light text-white font-bold py-3 px-8 rounded-lg hover:shadow-xl transition-all duration-300 shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+          class="w-full sm:w-auto bg-[#2D5A3D] text-white font-bold py-3 px-8 rounded-lg hover:bg-[#234A31] transition-colors duration-200 shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {{ isSubmitting ? 'Mengirim...' : 'Kirim Laporan' }}
         </button>

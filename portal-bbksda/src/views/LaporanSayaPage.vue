@@ -25,20 +25,20 @@ const handleEditReport = async (reportId) => {
 <template>
   <div>
     <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
-      <h2 class="text-2xl sm:text-3xl font-bold text-brand-green">Laporan Saya</h2>
+      <h2 class="text-2xl sm:text-3xl font-bold" style="color: #2D5A3D;">Laporan Saya</h2>
       <button
         @click="router.push({ name: 'Lapor' })"
-        class="w-full sm:w-auto bg-brand-green text-white px-6 py-2.5 rounded-lg hover:bg-brand-green-light transition-colors text-sm sm:text-base"
+        class="w-full sm:w-auto bg-[#2D5A3D] text-white px-6 py-2.5 rounded-lg hover:bg-[#234A31] transition-colors text-sm sm:text-base"
       >
         + Buat Laporan Baru
       </button>
     </div>
 
-    <div v-if="reportsStore.myReports.length === 0" class="text-center p-10 bg-white rounded-xl">
+    <div v-if="reportsStore.myReports.length === 0" class="text-center p-10 bg-white rounded-xl border border-gray-100">
       <p class="text-gray-500 mb-4">Anda belum memiliki laporan.</p>
       <button
         @click="router.push({ name: 'Lapor' })"
-        class="bg-brand-green text-white px-6 py-3 rounded-lg hover:bg-brand-green-light transition-colors"
+        class="bg-[#2D5A3D] text-white px-6 py-3 rounded-lg hover:bg-[#234A31] transition-colors"
       >
         Buat Laporan Pertama
       </button>

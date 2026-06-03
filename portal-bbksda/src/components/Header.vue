@@ -15,8 +15,8 @@ const mobileMenuOpen = ref(false)
 
 const navLinkClass = (routeName) => {
   return route.name === routeName
-    ? 'text-brand-green font-semibold border-b-2 border-brand-green'
-    : 'text-gray-600 hover:text-brand-green transition-colors duration-300'
+    ? 'text-[#2D5A3D] font-semibold'
+    : 'text-gray-500 hover:text-[#2D5A3D] transition-colors duration-200'
 }
 
 const navigateAndClose = (routeName) => {

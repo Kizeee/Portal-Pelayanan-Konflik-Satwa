@@ -3,64 +3,64 @@ export default {
   content: ['./index.html', './src/**/*.{vue,js,ts,jsx,tsx}'],
   theme: {
     extend: {
-      // 🎨 Color System - Nature/Wildlife Theme
+      // Color System - Calm Nature Theme (Revised)
       colors: {
-        // Primary Colors (Green - Nature)
+        // Primary Colors - Forest Green (Kalem)
         primary: {
-          50: '#f0f9f4',
-          100: '#d9f2e3',
-          200: '#b3e5c7',
-          300: '#8dd8ab',
-          400: '#67cb8f',
-          500: '#386641', // Main brand color (original)
-          600: '#34985c',
-          700: '#277245',
-          800: '#1a4c2e',
-          900: '#0d2617',
+          50: '#F0F4F1',
+          100: '#DCE5DE',
+          200: '#B9CBBD',
+          300: '#96B19C',
+          400: '#73977B',
+          500: '#2D5A3D', // Main brand color (forest green - lebih kalem)
+          600: '#264E34',
+          700: '#1F422B',
+          800: '#183622',
+          900: '#112A19',
         },
 
-        // Secondary Colors (Warm Accent)
+        // Secondary Colors - Sage Green
         secondary: {
-          50: '#fff8e6',
-          100: '#fff0cc',
-          200: '#ffe199',
-          300: '#ffd166',
-          400: '#ffc233',
-          500: '#ffb300',
-          600: '#cc8f00',
-          700: '#996b00',
-          800: '#664700',
-          900: '#332400',
+          50: '#F4F6F2',
+          100: '#E5EAE2',
+          200: '#CBD5C5',
+          300: '#B1C0A8',
+          400: '#97AB8B',
+          500: '#4A7C59', // Sage green
+          600: '#3F6A4C',
+          700: '#34583F',
+          800: '#294632',
+          900: '#1E3425',
         },
 
-        // Semantic Colors
+        // Semantic Colors (Muted versions)
         success: {
-          light: '#d4edda',
-          DEFAULT: '#28a745',
-          dark: '#1e7e34',
+          light: '#E8F0E9',
+          DEFAULT: '#2D5A3D',
+          dark: '#234A31',
         },
         warning: {
-          light: '#fff3cd',
-          DEFAULT: '#ffc107',
-          dark: '#e0a800',
+          light: '#FEF6E9',
+          DEFAULT: '#B45309',
+          dark: '#92400E',
         },
         error: {
-          light: '#f8d7da',
-          DEFAULT: '#dc3545',
-          dark: '#bd2130',
+          light: '#FEF2F2',
+          DEFAULT: '#B91C1C',
+          dark: '#991B1B',
         },
         info: {
-          light: '#d1ecf1',
-          DEFAULT: '#17a2b8',
-          dark: '#117a8b',
+          light: '#EBF2FE',
+          DEFAULT: '#1E40AF',
+          dark: '#1E3A8A',
         },
 
-        // Legacy brand colors (for backward compatibility)
-        'brand-green': '#386641',
-        'brand-green-light': '#6A994E',
-        'brand-accent': '#A7C957',
-        'brand-brown': '#A77B0E',
-        'brand-bg': '#fafafa',
+        // Updated brand colors (kalem)
+        'brand-green': '#2D5A3D',
+        'brand-green-light': '#4A7C59',
+        'brand-accent': '#8B9F7C',
+        'brand-brown': '#78716C',
+        'brand-bg': '#F5F6F3',
       },
 
       // 📝 Typography

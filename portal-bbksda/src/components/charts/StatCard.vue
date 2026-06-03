@@ -37,15 +37,11 @@ watch(() => props.value, (val) => animateCounter(val ?? 0))
 
 <template>
   <div class="stat-card" :class="gradient || color">
-    <!-- Decorative blobs -->
-    <div class="blob blob-1"></div>
-    <div class="blob blob-2"></div>
-
     <!-- Icon circle -->
     <div class="icon-wrap">
       <svg
         xmlns="http://www.w3.org/2000/svg"
-        class="h-6 w-6"
+        class="h-5 w-5"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor"
@@ -60,9 +56,6 @@ watch(() => props.value, (val) => animateCounter(val ?? 0))
       <p class="stat-value">{{ displayValue }}</p>
       <p class="stat-title">{{ title }}</p>
     </div>
-
-    <!-- Bottom bar accent -->
-    <div class="bottom-bar"></div>
   </div>
 </template>
 
@@ -70,58 +63,58 @@ watch(() => props.value, (val) => animateCounter(val ?? 0))
 .stat-card {
   position: relative;
   overflow: hidden;
-  border-radius: 20px;
-  padding: 1.5rem 1.25rem 1.75rem;
+  border-radius: 16px;
+  padding: 1.25rem 1rem 1.5rem;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
   cursor: default;
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 .stat-card:hover {
-  transform: translateY(-4px) scale(1.02);
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.18);
-}
-
-/* Gradient presets applied via the gradient prop from parent */
-/* Fallback: if no gradient class is provided, color prop is used */
-
-/* Decorative blobs */
-.blob {
-  position: absolute;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.12);
-  pointer-events: none;
-}
-.blob-1 {
-  width: 110px;
-  height: 110px;
-  top: -30px;
-  right: -30px;
-}
-.blob-2 {
-  width: 70px;
-  height: 70px;
-  bottom: -20px;
-  left: -10px;
-  background: rgba(255, 255, 255, 0.08);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 /* Icon */
 .icon-wrap {
-  width: 48px;
-  height: 48px;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.22);
-  backdrop-filter: blur(6px);
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: currentColor;
+  opacity: 0.12;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #fff;
+  position: relative;
+}
+
+.icon-wrap svg {
+  position: absolute;
+  color: inherit;
+  opacity: 1;
+}
+
+/* Fix icon visibility */
+.stat-card .icon-wrap {
+  background: transparent;
+}
+
+.stat-card .icon-wrap::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: currentColor;
+  opacity: 0.15;
+  border-radius: 10px;
+}
+
+.stat-card .icon-wrap svg {
+  position: relative;
   z-index: 1;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
 }
 
 /* Stat content */
@@ -130,31 +123,18 @@ watch(() => props.value, (val) => animateCounter(val ?? 0))
 }
 
 .stat-value {
-  font-size: 2.4rem;
-  font-weight: 800;
-  color: #fff;
+  font-size: 2rem;
+  font-weight: 700;
   line-height: 1;
   letter-spacing: -0.5px;
-  text-shadow: 0 2px 8px rgba(0,0,0,0.15);
 }
 
 .stat-title {
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.88);
-  margin-top: 0.3rem;
-  letter-spacing: 0.3px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  opacity: 0.7;
+  margin-top: 0.25rem;
+  letter-spacing: 0.2px;
   text-transform: uppercase;
-}
-
-/* Bottom accent bar */
-.bottom-bar {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: rgba(255, 255, 255, 0.3);
-  border-radius: 0 0 20px 20px;
 }
 </style>

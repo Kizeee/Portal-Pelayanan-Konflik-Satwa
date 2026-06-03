@@ -259,10 +259,10 @@ const saveVerification = async (markVerified = false) => {
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-3">
       <div>
-        <h2 class="text-2xl sm:text-3xl font-bold text-gradient-primary mb-1 sm:mb-2">Kelola Laporan</h2>
-        <p class="text-gray-600 text-sm sm:text-base">
+        <h2 class="text-2xl sm:text-3xl font-bold mb-1 sm:mb-2" style="color: #2D5A3D;">Kelola Laporan</h2>
+        <p class="text-gray-500 text-sm sm:text-base">
           Menampilkan
-          <span class="font-semibold text-primary-600">{{ reportsStore.filteredReports.length }}</span>
+          <span class="font-semibold" style="color: #2D5A3D;">{{ reportsStore.filteredReports.length }}</span>
           dari {{ reportsStore.reports.length }} laporan
         </p>
       </div>
@@ -271,7 +271,7 @@ const saveVerification = async (markVerified = false) => {
       <div class="hidden sm:flex items-center space-x-2">
         <button
           @click="viewMode = 'grid'"
-          :class="viewMode === 'grid' ? 'bg-primary-500 text-white' : 'bg-gray-100 text-gray-600'"
+          :class="viewMode === 'grid' ? 'bg-[#2D5A3D] text-white' : 'bg-gray-100 text-gray-600'"
           class="px-4 py-2 rounded-lg transition-colors"
         >
           <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -285,7 +285,7 @@ const saveVerification = async (markVerified = false) => {
         </button>
         <button
           @click="viewMode = 'list'"
-          :class="viewMode === 'list' ? 'bg-primary-500 text-white' : 'bg-gray-100 text-gray-600'"
+          :class="viewMode === 'list' ? 'bg-[#2D5A3D] text-white' : 'bg-gray-100 text-gray-600'"
           class="px-4 py-2 rounded-lg transition-colors"
         >
           <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

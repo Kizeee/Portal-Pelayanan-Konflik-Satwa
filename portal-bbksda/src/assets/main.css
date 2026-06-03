@@ -35,7 +35,7 @@
 @layer components {
   /* Focus visible styles */
   .focus-ring {
-    @apply focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2;
+    @apply focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:ring-offset-2;
   }
 
   /* Card hover effect */
@@ -61,21 +61,25 @@
     @apply bg-gradient-to-r from-success to-success-dark;
   }
 
-  /* Stat card gradients */
+  /* Stat card styles - Pastel/Muted version */
   .stat-gradient-green {
-    background: linear-gradient(135deg, #2d6a4f 0%, #52b788 100%);
+    background-color: #E8F0E9;
+    color: #2D5A3D;
   }
 
   .stat-gradient-yellow {
-    background: linear-gradient(135deg, #b45309 0%, #fbbf24 100%);
+    background-color: #FEF6E9;
+    color: #92400E;
   }
 
   .stat-gradient-teal {
-    background: linear-gradient(135deg, #0f766e 0%, #2dd4bf 100%);
+    background-color: #E6F3F2;
+    color: #0F766E;
   }
 
   .stat-gradient-blue {
-    background: linear-gradient(135deg, #1d4ed8 0%, #60a5fa 100%);
+    background-color: #EBF2FE;
+    color: #1E40AF;
   }
 
   /* Shimmer loading effect */

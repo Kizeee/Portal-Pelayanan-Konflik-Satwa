@@ -177,18 +177,18 @@ const laporanPerLokasi = computed(() => {
   <div>
     <!-- HEADER -->
     <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-3">
-      <h2 class="text-2xl sm:text-3xl font-bold text-brand-green">Statistik</h2>
+      <h2 class="text-2xl sm:text-3xl font-bold" style="color: #2D5A3D;">Statistik</h2>
 
       <div class="flex flex-col xs:flex-row items-stretch xs:items-center gap-2 sm:gap-3">
         <input
           type="month"
           v-model="selectedMonth"
-          class="w-full xs:w-auto px-3 py-2 border rounded-lg focus:ring-brand-green-light focus:border-brand-green-light text-sm"
+          class="w-full xs:w-auto px-3 py-2 border border-gray-200 rounded-lg focus:ring-[#4A7C59] focus:border-[#4A7C59] text-sm"
         />
 
         <button
           @click="router.push({ name: 'RekapBulanan' })"
-          class="w-full xs:w-auto bg-brand-green text-white font-bold py-2 px-4 sm:px-5 rounded-lg hover:bg-brand-green-light transition-colors text-sm sm:text-base"
+          class="w-full xs:w-auto bg-[#2D5A3D] text-white font-semibold py-2 px-4 sm:px-5 rounded-lg hover:bg-[#234A31] transition-colors text-sm sm:text-base"
         >
           Buat Rekap Bulanan
         </button>
