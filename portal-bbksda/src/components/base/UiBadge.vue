@@ -58,7 +58,7 @@ const badgeClasses = computed(() => {
     <!-- Dot Indicator -->
     <span
       v-if="dot"
-      class="w-1.5 h-1.5 rounded-full mr-1.5 animate-pulse"
+      class="w-1.5 h-1.5 rounded-full mr-1.5"
       :class="{
         'bg-info-dark': status === 'Diterima' || status === 'info',
         'bg-warning-dark': status === 'Penanganan di Lokasi' || status === 'Diproses' || status === 'warning' || status === 'Menunggu Verifikasi' || status === 'pending',

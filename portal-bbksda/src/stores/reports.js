@@ -1,5 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { db } from '../firebase'
+import { collection, onSnapshot, query } from 'firebase/firestore'
 import { useReports } from '../composables/useReports'
 
 /**
@@ -8,13 +10,15 @@ import { useReports } from '../composables/useReports'
  */
 export const useReportsStore = defineStore('reports', () => {
   // Composables
-  const { fetchAllReports, createReport, updateReport, getReportById } = useReports()
+  const { fetchAllReports, createReport, updateReport, getReportByTicketId } = useReports()
 
   // State
   const reports = ref([])
   const myReportIds = ref([])
   const selectedReportId = ref(null)
   const isLoading = ref(false)
+  const isRealtimeListening = ref(false)
+  let unsubscribeReports = null
 
   // Filters State
   const filters = ref({
@@ -23,6 +27,7 @@ export const useReportsStore = defineStore('reports', () => {
     dateTo: null,
     status: [],
     animalType: [],
+    prioritas: [],
     sortBy: 'newest',
   })
 
@@ -31,6 +36,14 @@ export const useReportsStore = defineStore('reports', () => {
     currentPage: 1,
     itemsPerPage: 12,
   })
+
+  const statusFilterAliases = {
+    'Menunggu Verifikasi': ['Menunggu Verifikasi', 'pending'],
+    Diterima: ['Diterima', 'verified'],
+    'Dalam Proses': ['Dalam Proses', 'Tim Menuju Lokasi', 'Penanganan di Lokasi', 'Diproses'],
+    Selesai: ['Selesai'],
+    Ditolak: ['Ditolak', 'Tidak Valid', 'ditolak'],
+  }
 
   // Getters
   /**
@@ -103,12 +116,23 @@ export const useReportsStore = defineStore('reports', () => {
 
     // Apply status filter
     if (filters.value.status.length > 0) {
-      result = result.filter(r => filters.value.status.includes(r.status))
+      result = result.filter(r => filters.value.status.some((status) => {
+        const aliases = statusFilterAliases[status] || [status]
+        return aliases.includes(r.status)
+      }))
     }
 
     // Apply animal type filter
     if (filters.value.animalType.length > 0) {
       result = result.filter(r => filters.value.animalType.includes(r.jenisSatwa))
+    }
+
+    // Apply prioritas filter
+    if (filters.value.prioritas && filters.value.prioritas.length > 0) {
+      result = result.filter(r => {
+        const p = r.prioritas || 'Sedang' // Default is Sedang for old data
+        return filters.value.prioritas.includes(p)
+      })
     }
 
     // Apply sorting
@@ -160,7 +184,8 @@ export const useReportsStore = defineStore('reports', () => {
       filters.value.dateFrom ||
       filters.value.dateTo ||
       filters.value.status.length > 0 ||
-      filters.value.animalType.length > 0
+      filters.value.animalType.length > 0 ||
+      (filters.value.prioritas && filters.value.prioritas.length > 0)
     )
   })
 
@@ -173,10 +198,35 @@ export const useReportsStore = defineStore('reports', () => {
     if (filters.value.dateFrom || filters.value.dateTo) count++
     if (filters.value.status.length > 0) count++
     if (filters.value.animalType.length > 0) count++
+    if (filters.value.prioritas && filters.value.prioritas.length > 0) count++
     return count
   })
 
   // Actions
+  const sortReportsByCreatedAt = (items) => {
+    return [...items].sort((a, b) => {
+      const dateA = a.createdAt?.toDate?.() || new Date(a.createdAt || 0)
+      const dateB = b.createdAt?.toDate?.() || new Date(b.createdAt || 0)
+      return dateB - dateA
+    })
+  }
+
+  const upsertReport = (reportData) => {
+    if (!reportData?.id) return
+
+    const index = reports.value.findIndex((report) => report.id === reportData.id)
+    if (index === -1) {
+      reports.value = sortReportsByCreatedAt([...reports.value, reportData])
+      return
+    }
+
+    reports.value.splice(index, 1, {
+      ...reports.value[index],
+      ...reportData,
+    })
+    reports.value = sortReportsByCreatedAt(reports.value)
+  }
+
   /**
    * Load all reports from Firestore
    */
@@ -193,18 +243,75 @@ export const useReportsStore = defineStore('reports', () => {
   }
 
   /**
+   * Keep reports synced with Firestore so status changes appear without refresh.
+   */
+  const startRealtimeSync = () => {
+    if (unsubscribeReports) return
+
+    if (!reports.value.length) {
+      isLoading.value = true
+    }
+
+    const reportsQuery = query(collection(db, 'laporan'))
+    unsubscribeReports = onSnapshot(
+      reportsQuery,
+      (snapshot) => {
+        reports.value = sortReportsByCreatedAt(
+          snapshot.docs.map((reportDoc) => ({
+            id: reportDoc.id,
+            ...reportDoc.data(),
+          })),
+        )
+        isLoading.value = false
+        isRealtimeListening.value = true
+      },
+      (error) => {
+        console.error('Error syncing reports in real-time:', error)
+        isLoading.value = false
+        isRealtimeListening.value = false
+        unsubscribeReports = null
+      },
+    )
+  }
+
+  const stopRealtimeSync = () => {
+    if (unsubscribeReports) {
+      unsubscribeReports()
+      unsubscribeReports = null
+    }
+    isRealtimeListening.value = false
+  }
+
+  /**
    * Add new report
    */
   const addReport = async (reportData) => {
     try {
       const reportId = await createReport(reportData)
-      myReportIds.value.push(reportId)
-      localStorage.setItem('myReportIds', JSON.stringify(myReportIds.value))
+      if (!myReportIds.value.includes(reportId)) {
+        myReportIds.value.push(reportId)
+      }
       await loadReports()
       return reportId
     } catch (error) {
       console.error('Error adding report:', error)
       throw error
+    }
+  }
+
+  const findReportByTicketId = async (ticketId) => {
+    isLoading.value = true
+    try {
+      const report = await getReportByTicketId(ticketId)
+      if (report) {
+        upsertReport(report)
+      }
+      return report
+    } catch (error) {
+      console.error('Error finding report by ticket ID:', error)
+      throw error
+    } finally {
+      isLoading.value = false
     }
   }
 
@@ -229,10 +336,10 @@ export const useReportsStore = defineStore('reports', () => {
   }
 
   /**
-   * Load my report IDs from localStorage
+   * Reset session-scoped tracked report IDs.
    */
   const loadMyReportIds = () => {
-    myReportIds.value = JSON.parse(localStorage.getItem('myReportIds') || '[]')
+    myReportIds.value = []
   }
 
   /**
@@ -253,6 +360,7 @@ export const useReportsStore = defineStore('reports', () => {
       dateTo: null,
       status: [],
       animalType: [],
+      prioritas: [],
       sortBy: 'newest',
     }
     pagination.value.currentPage = 1
@@ -287,6 +395,7 @@ export const useReportsStore = defineStore('reports', () => {
     myReportIds,
     selectedReportId,
     isLoading,
+    isRealtimeListening,
     filters,
     pagination,
 
@@ -303,7 +412,11 @@ export const useReportsStore = defineStore('reports', () => {
 
     // Actions
     loadReports,
+    startRealtimeSync,
+    stopRealtimeSync,
+    upsertReport,
     addReport,
+    findReportByTicketId,
     modifyReport,
     setSelectedReport,
     loadMyReportIds,

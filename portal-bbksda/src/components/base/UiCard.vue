@@ -22,12 +22,12 @@ const props = defineProps({
 })
 
 const cardClasses = computed(() => {
-  const base = 'rounded-xl transition-all duration-base'
+  const base = 'rounded-lg transition-colors duration-base'
 
   const variants = {
-    elevated: 'bg-white shadow-card',
-    outlined: 'bg-white border-2 border-gray-200',
-    filled: 'bg-gray-50',
+    elevated: 'bg-white border border-gray-200 shadow-sm',
+    outlined: 'bg-white border border-gray-200',
+    filled: 'bg-gray-50 border border-gray-200',
   }
 
   const interactive = props.hoverable ? 'card-hover' : ''

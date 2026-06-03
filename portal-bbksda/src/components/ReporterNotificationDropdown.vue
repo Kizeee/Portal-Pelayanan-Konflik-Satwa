@@ -117,16 +117,16 @@ onUnmounted(() => {
         class="notif-dropdown-panel"
       >
         <!-- Header -->
-        <div class="px-5 py-4 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-t-2xl">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <div class="px-5 py-4 bg-gradient-to-r from-blue-500 to-indigo-600 text-white">
+          <div class="flex items-center justify-between gap-4">
+            <div class="flex min-w-0 items-center gap-2.5">
+              <svg class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
               </svg>
-              <h3 class="font-bold text-base">Update Laporan</h3>
+              <h3 class="font-bold text-base leading-tight whitespace-nowrap">Update Laporan</h3>
               <span
                 v-if="notifStore.unreadCount > 0"
-                class="bg-white/20 text-white text-xs font-semibold px-2 py-0.5 rounded-full"
+                class="bg-white/20 text-white text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap"
               >
                 {{ notifStore.unreadCount }} baru
               </span>
@@ -134,7 +134,7 @@ onUnmounted(() => {
             <button
               v-if="notifStore.unreadCount > 0"
               @click="notifStore.markAllAsRead()"
-              class="text-xs font-medium text-white/80 hover:text-white transition-colors"
+              class="flex-shrink-0 text-xs font-medium text-white/80 hover:text-white transition-colors whitespace-nowrap"
             >
               Tandai Dibaca
             </button>
@@ -167,11 +167,11 @@ onUnmounted(() => {
 
               <!-- Content -->
               <div class="flex-1 min-w-0">
-                <div class="flex items-center justify-between">
-                  <p class="text-sm font-bold text-gray-800">
-                    {{ notif.idLaporan }}
+                <div class="flex items-start justify-between gap-3">
+                  <p class="text-sm font-bold text-gray-800 flex flex-wrap items-center gap-1.5">
+                    <span>{{ notif.idLaporan }}</span>
                     <span
-                      class="ml-1.5 text-xs font-semibold px-2 py-0.5 rounded-full"
+                      class="text-xs font-semibold px-2 py-0.5 rounded-full"
                       :class="{
                         'bg-amber-100 text-amber-700': notif.status === 'Menunggu Verifikasi' || notif.status === 'pending',
                         'bg-blue-100 text-blue-700': notif.status === 'Diterima' || notif.status === 'verified',
@@ -184,7 +184,7 @@ onUnmounted(() => {
                       {{ notif.statusLabel }}
                     </span>
                   </p>
-                  <span class="text-xs text-gray-400 flex-shrink-0 ml-2">
+                  <span class="text-xs text-gray-400 flex-shrink-0 whitespace-nowrap pt-0.5">
                     {{ formatTime(notif.timestamp) }}
                   </span>
                 </div>
@@ -202,38 +202,38 @@ onUnmounted(() => {
               </div>
             </div>
           </div>
-
-          <!-- Empty State -->
           <div
             v-if="notifStore.recentNotifications.length === 0"
-            class="px-5 py-12 text-center"
+            class="px-5 py-10 text-center"
           >
-            <div class="mx-auto h-16 w-16 bg-blue-50 rounded-full flex items-center justify-center mb-3">
-              <svg class="h-8 w-8 text-blue-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+            <div class="mx-auto h-12 w-12 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mb-3">
+              <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
               </svg>
             </div>
-            <p class="text-sm font-semibold text-gray-500">Belum ada update</p>
-            <p class="text-xs text-gray-400 mt-1">Update status laporan Anda akan muncul di sini</p>
+            <p class="text-sm font-bold text-gray-700">Belum ada pembaruan laporan.</p>
+            <p class="text-xs text-gray-400 mt-1 max-w-[240px] mx-auto leading-relaxed">Jika status laporan berubah, notifikasi akan muncul di sini.</p>
           </div>
         </div>
 
         <!-- Footer -->
         <div
-          v-if="notifStore.recentNotifications.length > 0"
           class="px-5 py-3 bg-gray-50 border-t border-gray-100 flex items-center justify-between"
         >
           <button
+            v-if="notifStore.recentNotifications.length > 0"
             @click="notifStore.clearAll(); notifStore.closeDropdown()"
             class="text-xs text-gray-400 hover:text-red-500 transition-colors font-medium"
           >
             Hapus Semua
           </button>
+          <div v-else></div>
           <button
             @click="notifStore.closeDropdown(); $router.push({ name: 'LaporanSaya' })"
-            class="text-xs text-blue-600 hover:text-blue-700 transition-colors font-semibold"
+            class="text-xs text-blue-600 hover:text-blue-700 transition-colors font-bold flex items-center gap-0.5"
           >
-            Lihat Semua Laporan →
+            <span>Lihat semua update</span>
+            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
           </button>
         </div>
       </div>
@@ -247,22 +247,22 @@ onUnmounted(() => {
   z-index: 10000;
   max-height: 480px;
   background: white;
-  border-radius: 1rem;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
   overflow: hidden;
+  border: 1px solid rgba(0,0,0,0.06);
 }
 
 /* Mobile: fixed centered panel */
 @media (max-width: 639px) {
   .notif-dropdown-panel {
     position: fixed;
-    top: 5rem;
+    top: 5.5rem;
     left: 1rem;
     right: 1rem;
     width: auto;
-    max-height: calc(100vh - 7rem);
-    max-height: calc(100dvh - 7rem);
+    max-height: calc(100vh - 7.5rem);
+    max-height: calc(100dvh - 7.5rem);
   }
 }
 
@@ -272,7 +272,7 @@ onUnmounted(() => {
     position: absolute;
     right: 0;
     margin-top: 0.75rem;
-    width: 24rem; /* w-96 */
+    width: min(28rem, calc(100vw - 2rem));
   }
 }
 

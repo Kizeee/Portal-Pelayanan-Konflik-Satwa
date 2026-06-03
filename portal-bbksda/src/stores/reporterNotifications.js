@@ -91,6 +91,92 @@ export const useReporterNotificationsStore = defineStore('reporterNotifications'
   })
 
   // Actions
+  const RECENT_STATUS_WINDOW_MS = 2 * 60 * 1000
+  const INITIAL_STATUSES = new Set(['Menunggu Verifikasi', 'pending'])
+
+  const toDate = (value) => {
+    if (!value) return null
+    const date = value.toDate ? value.toDate() : new Date(value)
+    return Number.isNaN(date.getTime()) ? null : date
+  }
+
+  const isRecentExistingStatusChange = (data, currentStatus) => {
+    if (INITIAL_STATUSES.has(currentStatus)) return false
+
+    const history = Array.isArray(data.statusHistory) ? data.statusHistory : []
+    const latest = history[history.length - 1]
+    if (!latest || latest.status !== currentStatus) return false
+
+    const timestamp = toDate(latest.timestamp)
+    if (!timestamp) return false
+
+    const age = Date.now() - timestamp.getTime()
+    return age >= 0 && age <= RECENT_STATUS_WINDOW_MS
+  }
+
+  const pushStatusNotification = (reportId, data, currentStatus) => {
+    const config = STATUS_CONFIG[currentStatus]
+    const idLaporan = data.idLaporan || reportId
+
+    const notification = {
+      id: `rn-${Date.now()}-${reportId}`,
+      reportId,
+      idLaporan,
+      status: currentStatus,
+      statusLabel: STATUS_LABELS[currentStatus] || currentStatus,
+      icon: config?.icon || 'ðŸ“Œ',
+      message: config
+        ? config.message(idLaporan)
+        : `Status laporan ${idLaporan} berubah menjadi: ${currentStatus}`,
+      type: config?.type || 'info',
+      timestamp: new Date(),
+      read: false,
+      // Extra context from latest statusHistory entry
+      notes: getLatestNotes(data.statusHistory),
+    }
+
+    notifications.value.unshift(notification)
+
+    // Show toast
+    toastMessage.value = notification.message
+    toastType.value = notification.type
+    toastReportId.value = reportId
+    showToast.value = true
+
+    // Play sound
+    playNotificationSound(notification.type)
+  }
+
+  const handleReportUpdate = (reportId, data, { syncStore = true } = {}) => {
+    if (!reportId || !data?.status) return
+
+    const currentStatus = data.status
+    const previousStatus = knownStatuses.get(reportId)
+
+    if (syncStore) {
+      try {
+        const reportsStore = useReportsStore()
+        reportsStore.upsertReport({ id: reportId, ...data })
+      } catch (e) {
+        // Abaikan jika store belum siap
+      }
+    }
+
+    // Record the status on first load without notifying
+    if (!knownStatuses.has(reportId)) {
+      knownStatuses.set(reportId, currentStatus)
+      if (isRecentExistingStatusChange(data, currentStatus)) {
+        pushStatusNotification(reportId, data, currentStatus)
+      }
+      return
+    }
+
+    // Only notify if the status actually changed
+    if (currentStatus !== previousStatus) {
+      knownStatuses.set(reportId, currentStatus)
+      pushStatusNotification(reportId, data, currentStatus)
+    }
+  }
 
   /**
    * Start listening for changes to a specific report
@@ -105,6 +191,9 @@ export const useReporterNotificationsStore = defineStore('reporterNotifications'
       (snapshot) => {
         if (!snapshot.exists()) return
 
+        handleReportUpdate(reportId, snapshot.data())
+
+        /*
         const data = snapshot.data()
         const currentStatus = data.status
         const previousStatus = knownStatuses.get(reportId)
@@ -114,11 +203,7 @@ export const useReporterNotificationsStore = defineStore('reporterNotifications'
         // tanpa perlu reload seluruh koleksi dari Firestore.
         try {
           const reportsStore = useReportsStore()
-          const idx = reportsStore.reports.findIndex((r) => r.id === reportId)
-          if (idx !== -1) {
-            // Gunakan splice() agar Vue 3 reactive system mendeteksi perubahan
-            reportsStore.reports.splice(idx, 1, { id: reportId, ...data })
-          }
+          reportsStore.upsertReport({ id: reportId, ...data })
         } catch (e) {
           // Abaikan jika store belum siap
         }
@@ -164,6 +249,7 @@ export const useReporterNotificationsStore = defineStore('reporterNotifications'
           // Play sound
           playNotificationSound(notification.type)
         }
+        */
       },
       (error) => {
         console.error(`Error watching report ${reportId}:`, error)
@@ -186,11 +272,22 @@ export const useReporterNotificationsStore = defineStore('reporterNotifications'
 
   /**
    * Start watching all reports that belong to this reporter
-   * @param {string[]} reportIds - Array of report IDs from localStorage
+   * @param {string[]} reportIds - Array of report IDs tracked in the current session
    */
   const startWatching = (reportIds) => {
     if (!reportIds || reportIds.length === 0) return
     reportIds.forEach((id) => watchReport(id))
+  }
+
+  const syncReportsFromStore = (reports, reportIds) => {
+    if (!reports || reports.length === 0) return
+
+    const trackedIds = new Set(reportIds || [])
+    reports.forEach((report) => {
+      if (!report?.id) return
+      if (trackedIds.size > 0 && !trackedIds.has(report.id)) return
+      handleReportUpdate(report.id, report, { syncStore: false })
+    })
   }
 
   /**
@@ -322,6 +419,7 @@ export const useReporterNotificationsStore = defineStore('reporterNotifications'
     // Actions
     startWatching,
     restartWatching,
+    syncReportsFromStore,
     watchReport,
     stopAll,
     markAsRead,

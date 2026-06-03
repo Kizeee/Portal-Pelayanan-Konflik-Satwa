@@ -41,18 +41,18 @@ const props = defineProps({
 
 const buttonClasses = computed(() => {
   const base =
-    'inline-flex items-center justify-center font-medium rounded-lg transition-all duration-base focus-ring disabled:opacity-50 disabled:cursor-not-allowed'
+    'inline-flex items-center justify-center font-medium rounded-md border transition-colors duration-base focus-ring disabled:opacity-50 disabled:cursor-not-allowed'
 
   const variants = {
     primary:
-      'bg-gradient-to-r from-primary-500 to-primary-600 text-white hover:from-primary-600 hover:to-primary-700 hover:shadow-md active:scale-95',
+      'bg-brand-green text-white border-brand-green hover:bg-brand-green-light hover:border-brand-green-light',
     secondary:
-      'bg-gradient-to-r from-secondary-400 to-secondary-500 text-gray-900 hover:from-secondary-500 hover:to-secondary-600 hover:shadow-md active:scale-95',
-    ghost: 'text-primary-600 hover:bg-primary-50 active:bg-primary-100',
+      'bg-white text-gray-800 border-gray-300 hover:bg-gray-50',
+    ghost: 'border-transparent text-brand-green hover:bg-primary-50',
     danger:
-      'bg-gradient-to-r from-error to-error-dark text-white hover:shadow-md active:scale-95',
+      'bg-error text-white border-error hover:bg-error-dark hover:border-error-dark',
     outline:
-      'border-2 border-primary-500 text-primary-600 hover:bg-primary-50 active:bg-primary-100',
+      'bg-white border-gray-300 text-gray-700 hover:border-brand-green hover:text-brand-green hover:bg-primary-50',
   }
 
   const sizes = {

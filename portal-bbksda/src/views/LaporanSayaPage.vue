@@ -1,104 +1,233 @@
 <script setup>
-import { useRouter } from 'vue-router'
+import { computed, onMounted, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useReportsStore } from '../stores/reports'
-import { useUIStore } from '../stores/ui'
+import { useReporterNotificationsStore } from '../stores/reporterNotifications'
 
+const route = useRoute()
 const router = useRouter()
 const reportsStore = useReportsStore()
-const uiStore = useUIStore()
+const reporterNotifStore = useReporterNotificationsStore()
 
-const handleViewDetail = (reportId) => {
-  reportsStore.setSelectedReport(reportId)
-  router.push({ name: 'Detail', params: { id: reportId } })
+const ticketId = ref('')
+const foundReportId = ref('')
+const isSearching = ref(false)
+const hasSearched = ref(false)
+const errorMessage = ref('')
+
+const foundReport = computed(() => {
+  if (!foundReportId.value) return null
+  return reportsStore.reports.find((report) => report.id === foundReportId.value) || null
+})
+
+const normalizeTicketId = (value) => String(value || '').trim().toUpperCase()
+
+const formatDate = (value) => {
+  if (!value) return '-'
+  const date = value.toDate ? value.toDate() : new Date(value)
+  if (Number.isNaN(date.getTime())) return '-'
+  return date.toLocaleDateString('id-ID', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  })
 }
 
-const handleEditReport = async (reportId) => {
-  const report = reportsStore.reports.find(r => r.id === reportId)
-  if (report) {
-    uiStore.openEditModal(report)
-  } else {
-    uiStore.showNotification('error', 'Gagal', 'Laporan tidak ditemukan.')
+const getStatusStep = (status) => {
+  if (['Ditolak', 'Tidak Valid', 'ditolak'].includes(status)) return -1
+  if (status === 'Selesai') return 4
+  if (['Tim Menuju Lokasi', 'Penanganan di Lokasi', 'Diproses'].includes(status)) return 3
+  if (['Diterima', 'verified'].includes(status)) return 2
+  return 1
+}
+
+const statusLabel = computed(() => {
+  const status = foundReport.value?.status
+  if (!status) return '-'
+  if (['Menunggu Verifikasi', 'pending'].includes(status)) return 'Dikirim'
+  if (['Diterima', 'verified'].includes(status)) return 'Diverifikasi'
+  if (['Tim Menuju Lokasi', 'Penanganan di Lokasi', 'Diproses'].includes(status)) return 'Penanganan'
+  return status
+})
+
+const statusClass = computed(() => {
+  const status = foundReport.value?.status
+  if (['Ditolak', 'Tidak Valid', 'ditolak'].includes(status)) return 'bg-red-50 text-red-700 border-red-200'
+  if (status === 'Selesai') return 'bg-green-50 text-green-700 border-green-200'
+  if (['Tim Menuju Lokasi', 'Penanganan di Lokasi', 'Diproses'].includes(status)) {
+    return 'bg-yellow-50 text-yellow-700 border-yellow-200'
+  }
+  if (['Diterima', 'verified'].includes(status)) return 'bg-blue-50 text-blue-700 border-blue-200'
+  return 'bg-amber-50 text-amber-700 border-amber-200'
+})
+
+const handleSearch = async (updateRoute = true) => {
+  const normalized = normalizeTicketId(ticketId.value)
+  foundReportId.value = ''
+  errorMessage.value = ''
+  hasSearched.value = true
+
+  if (!normalized) {
+    errorMessage.value = 'Masukkan ID Tiket laporan terlebih dahulu.'
+    return
+  }
+
+  ticketId.value = normalized
+  isSearching.value = true
+
+  try {
+    const report = await reportsStore.findReportByTicketId(normalized)
+
+    if (!report) {
+      errorMessage.value = 'ID Tiket tidak ditemukan. Periksa kembali penulisan ID Anda.'
+      return
+    }
+
+    foundReportId.value = report.id
+    reportsStore.setSelectedReport(report.id)
+    if (!reportsStore.myReportIds.includes(report.id)) {
+      reportsStore.myReportIds.push(report.id)
+    }
+    reporterNotifStore.watchReport(report.id)
+
+    if (updateRoute) {
+      router.replace({ name: 'LaporanSaya', query: { id: normalized } })
+    }
+  } catch (error) {
+    console.error('Gagal mencari laporan:', error)
+    errorMessage.value = 'Gagal mengambil status laporan. Silakan coba lagi beberapa saat.'
+  } finally {
+    isSearching.value = false
   }
 }
+
+const handleViewDetail = () => {
+  if (!foundReport.value?.id) return
+  reportsStore.setSelectedReport(foundReport.value.id)
+  router.push({ name: 'Detail', params: { id: foundReport.value.id } })
+}
+
+onMounted(() => {
+  const queryTicketId = normalizeTicketId(route.query.id)
+  if (queryTicketId) {
+    ticketId.value = queryTicketId
+    handleSearch(false)
+  }
+})
 </script>
 
 <template>
-  <div>
-    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
+  <div class="max-w-3xl mx-auto px-2">
+    <div class="mb-6">
       <h2 class="text-2xl sm:text-3xl font-bold text-brand-green">Laporan Saya</h2>
-      <button
-        @click="router.push({ name: 'Lapor' })"
-        class="w-full sm:w-auto bg-brand-green text-white px-6 py-2.5 rounded-lg hover:bg-brand-green-light transition-colors text-sm sm:text-base"
-      >
-        + Buat Laporan Baru
-      </button>
+      <p class="text-gray-500 text-sm mt-1">
+        Masukkan ID Tiket yang Anda terima setelah submit laporan untuk melihat status terbaru dari database.
+      </p>
     </div>
 
-    <div v-if="reportsStore.myReports.length === 0" class="text-center p-10 bg-white rounded-xl">
-      <p class="text-gray-500 mb-4">Anda belum memiliki laporan.</p>
-      <button
-        @click="router.push({ name: 'Lapor' })"
-        class="bg-brand-green text-white px-6 py-3 rounded-lg hover:bg-brand-green-light transition-colors"
-      >
-        Buat Laporan Pertama
-      </button>
+    <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-5 sm:p-6">
+      <form class="flex flex-col sm:flex-row gap-3 sm:items-end" @submit.prevent="handleSearch()">
+        <div class="flex-1">
+          <label for="ticket-id" class="block text-sm font-bold text-gray-700 mb-1">ID Tiket</label>
+          <input
+            id="ticket-id"
+            v-model="ticketId"
+            type="text"
+            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-green-light focus:border-brand-green-light outline-none font-mono text-sm uppercase"
+            placeholder="BKSDA-202606-0001"
+          />
+        </div>
+        <button
+          type="submit"
+          :disabled="isSearching"
+          class="bg-brand-green text-white font-bold py-3 px-6 rounded-lg hover:bg-brand-green-light transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+        >
+          {{ isSearching ? 'Mencari...' : 'Cari Status' }}
+        </button>
+      </form>
+      <p class="text-xs text-gray-400 mt-3">
+        ID Tiket bersifat unik. Simpan ID tersebut agar Anda dapat memantau perkembangan laporan dari perangkat mana pun.
+      </p>
     </div>
 
-    <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <div
-        v-for="report in reportsStore.myReports"
-        :key="report.id"
-        class="bg-white p-6 rounded-xl shadow-md hover:shadow-xl transition-shadow"
-      >
-        <div class="flex justify-between items-start mb-4">
-          <h3 class="font-semibold text-lg text-gray-800">{{ report.idLaporan }}</h3>
-          <span
-            :class="{
-              'bg-amber-100 text-amber-800': report.status === 'Menunggu Verifikasi' || report.status === 'pending',
-              'bg-blue-100 text-blue-800': report.status === 'Diterima' || report.status === 'verified',
-              'bg-emerald-100 text-emerald-800': report.status === 'Tim Menuju Lokasi',
-              'bg-yellow-100 text-yellow-800': report.status === 'Penanganan di Lokasi' || report.status === 'Diproses',
-              'bg-green-100 text-green-800': report.status === 'Selesai',
-              'bg-red-100 text-red-800': report.status === 'Ditolak' || report.status === 'Tidak Valid',
-            }"
-            class="px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap"
-          >
-            {{ report.status }}
-          </span>
-        </div>
+    <div v-if="errorMessage" class="mt-5 bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 text-sm font-semibold">
+      {{ errorMessage }}
+    </div>
 
-        <div class="space-y-2 text-sm text-gray-600 mb-4">
-          <p>
-            <span class="font-semibold">Jenis Satwa:</span> {{ report.jenisSatwa }}
-          </p>
-          <p>
-            <span class="font-semibold">Kategori Konflik:</span> {{ report.kategoriKonflik || '-' }}
-          </p>
-          <p>
-            <span class="font-semibold">Lokasi:</span> {{ report.lokasi || 'Tidak ada' }}
-          </p>
-          <p>
-            <span class="font-semibold">Tanggal:</span>
-            {{ new Date(report.tanggal).toLocaleDateString('id-ID') }}
-          </p>
-        </div>
+    <div
+      v-else-if="hasSearched && !foundReport && !isSearching"
+      class="mt-5 bg-white border border-dashed border-gray-300 rounded-xl p-8 text-center"
+    >
+      <h3 class="font-bold text-gray-800 mb-1">Belum ada laporan yang ditampilkan.</h3>
+      <p class="text-sm text-gray-500">Masukkan ID Tiket lalu tekan Cari Status.</p>
+    </div>
 
-        <div class="flex gap-2">
-          <button
-            @click="handleViewDetail(report.id)"
-            class="flex-1 bg-brand-green text-white py-2 rounded-lg hover:bg-brand-green-light transition-colors"
+    <div v-if="foundReport" class="mt-6 bg-white border border-gray-200 rounded-xl shadow-sm p-5 sm:p-6">
+      <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 pb-5 border-b border-gray-100">
+        <div>
+          <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">ID Tiket</p>
+          <h3 class="text-xl sm:text-2xl font-mono font-extrabold text-brand-green mt-1">
+            {{ foundReport.idLaporan || foundReport.id }}
+          </h3>
+        </div>
+        <span :class="statusClass" class="inline-flex items-center justify-center px-3 py-1 rounded-full border text-xs font-extrabold uppercase tracking-wide self-start">
+          {{ statusLabel }}
+        </span>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-gray-600 py-5">
+        <p><strong class="text-gray-800">Jenis Satwa:</strong> {{ foundReport.jenisSatwa || '-' }}</p>
+        <p><strong class="text-gray-800">Tanggal Kejadian:</strong> {{ formatDate(foundReport.tanggal) }}</p>
+        <p class="sm:col-span-2"><strong class="text-gray-800">Lokasi:</strong> {{ foundReport.lokasi || '-' }}</p>
+      </div>
+
+      <div v-if="getStatusStep(foundReport.status) === -1" class="bg-red-50 border border-red-200 text-red-700 text-sm font-semibold p-3 rounded-lg text-center">
+        Laporan ini ditolak atau tidak valid dan tidak dapat ditindaklanjuti lebih lanjut.
+      </div>
+      <div v-else class="px-1 py-3">
+        <div class="relative flex items-start justify-between">
+          <div class="absolute left-0 right-0 top-3 h-1 bg-gray-200">
+            <div
+              class="h-full bg-brand-green transition-all duration-300"
+              :style="{ width: `${((getStatusStep(foundReport.status) - 1) / 3) * 100}%` }"
+            ></div>
+          </div>
+
+          <div
+            v-for="(step, index) in ['Dikirim', 'Diverifikasi', 'Penanganan', 'Selesai']"
+            :key="step"
+            class="relative z-10 flex flex-col items-center text-center w-20"
           >
-            Lihat Detail
-          </button>
-          <button
-            v-if="report.status === 'Menunggu Verifikasi' || report.status === 'pending'"
-            @click="handleEditReport(report.id)"
-            class="px-4 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-          >
-            Edit
-          </button>
+            <div
+              class="h-7 w-7 rounded-full flex items-center justify-center text-[11px] font-bold ring-4 ring-white shadow-sm"
+              :class="getStatusStep(foundReport.status) >= index + 1 ? 'bg-brand-green text-white' : 'bg-gray-200 text-gray-400'"
+            >
+              {{ index + 1 }}
+            </div>
+            <span class="text-[10px] sm:text-xs font-bold text-gray-500 mt-2 bg-white px-1">{{ step }}</span>
+          </div>
         </div>
       </div>
+
+      <div class="mt-6 flex flex-col sm:flex-row gap-3">
+        <button
+          @click="handleViewDetail"
+          class="flex-1 bg-brand-green text-white font-bold py-3 px-5 rounded-lg hover:bg-brand-green-light transition-colors"
+        >
+          Lihat Detail Laporan
+        </button>
+        <button
+          @click="router.push({ name: 'Lapor' })"
+          class="flex-1 bg-gray-100 text-gray-700 font-bold py-3 px-5 rounded-lg hover:bg-gray-200 transition-colors"
+        >
+          Buat Laporan Baru
+        </button>
+      </div>
+    </div>
+
+    <div class="mt-6 bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-800">
+      <strong>Keadaan darurat?</strong>
+      Jika satwa masih mengancam keselamatan, jangan menunggu status portal. Segera hubungi WhatsApp 0813-7474-2981.
     </div>
   </div>
 </template>

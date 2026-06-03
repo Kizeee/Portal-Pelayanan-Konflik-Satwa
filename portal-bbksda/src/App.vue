@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, watch } from 'vue'
+import { onMounted, onUnmounted, watch } from 'vue'
 import { useAuthStore } from './stores/auth'
 import { useReportsStore } from './stores/reports'
 import { useUIStore } from './stores/ui'
@@ -26,17 +26,26 @@ const reporterNotifStore = useReporterNotificationsStore()
 // Composables
 const { updateReport } = useReports()
 
+const handleVisibilityChange = async () => {
+  if (document.visibilityState !== 'visible') return
+
+  await reportsStore.loadReports()
+  if (!authStore.user && reportsStore.myReportIds.length > 0) {
+    reporterNotifStore.restartWatching(reportsStore.myReportIds)
+  }
+}
+
 // Initialize stores on mount
 onMounted(async () => {
   authStore.initAuth()
   await reportsStore.initialize()
+  reportsStore.startRealtimeSync()
 
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.addEventListener('message', async (event) => {
       if (event.data?.type === 'OFFLINE_REPORT_SYNCED' && event.data.reportId) {
         if (!reportsStore.myReportIds.includes(event.data.reportId)) {
           reportsStore.myReportIds.push(event.data.reportId)
-          localStorage.setItem('myReportIds', JSON.stringify(reportsStore.myReportIds))
         }
         await reportsStore.loadReports()
         // Also start watching this new report for status updates
@@ -45,24 +54,19 @@ onMounted(async () => {
     })
   }
 
-  // Mulai memantau laporan warga setelah data selesai dimuat
-  // initialize() sudah selesai, jadi myReportIds pasti sudah ter-load dari localStorage
+  // Mulai memantau laporan warga yang dibuat dalam sesi browser saat ini.
   if (!authStore.user && reportsStore.myReportIds.length > 0) {
     reporterNotifStore.startWatching(reportsStore.myReportIds)
   }
 
   // ── Refresh data ketika PWA kembali ke foreground (dari background/minimize) ──
   // Ini mengatasi masalah PWA yang menampilkan data lama saat dibuka kembali
-  document.addEventListener('visibilitychange', async () => {
-    if (document.visibilityState === 'visible') {
-      // Reload laporan dari Firestore untuk mendapatkan data terbaru
-      await reportsStore.loadReports()
-      // Restart watcher agar listener Firestore yang mungkin terputus di-reconnect
-      if (!authStore.user && reportsStore.myReportIds.length > 0) {
-        reporterNotifStore.restartWatching(reportsStore.myReportIds)
-      }
-    }
-  })
+  document.addEventListener('visibilitychange', handleVisibilityChange)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
+  reportsStore.stopRealtimeSync()
 })
 
 // Watch auth state: start/stop real-time notification listener
@@ -102,6 +106,21 @@ watch(
     }
   },
   { deep: true },
+)
+
+watch(
+  () =>
+    reportsStore.myReports.map((report) => ({
+      id: report.id,
+      status: report.status,
+      historyLength: Array.isArray(report.statusHistory) ? report.statusHistory.length : 0,
+    })),
+  () => {
+    if (!authStore.user && reportsStore.myReportIds.length > 0) {
+      reporterNotifStore.syncReportsFromStore(reportsStore.myReports, reportsStore.myReportIds)
+    }
+  },
+  { deep: true, immediate: true },
 )
 
 // Handlers
@@ -183,4 +202,3 @@ const handleSaveChanges = async (updatedData) => {
     <ReloadPrompt />
   </div>
 </template>
-

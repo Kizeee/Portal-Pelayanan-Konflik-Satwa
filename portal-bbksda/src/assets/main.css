@@ -40,12 +40,12 @@
 
   /* Card hover effect */
   .card-hover {
-    @apply transition-all duration-base hover:-translate-y-1 hover:shadow-card-hover;
+    @apply transition-colors duration-base hover:border-gray-300 hover:shadow-sm;
   }
 
   /* Button base */
   .btn-base {
-    @apply px-4 py-2 rounded-lg font-medium transition-all duration-base focus-ring disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply px-4 py-2 rounded-md font-medium transition-colors duration-base focus-ring disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
   /* Gradient backgrounds */
@@ -97,12 +97,36 @@
 
   /* Card elevated */
   .card-elevated {
-    @apply bg-white rounded-xl shadow-card p-6;
+    @apply bg-white rounded-lg border border-gray-200 shadow-sm p-6;
   }
 
   /* Input base */
   .input-base {
     @apply w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-base;
+  }
+
+  .date-input-ios,
+  .month-input-ios {
+    display: block;
+    box-sizing: border-box;
+    max-width: 100%;
+    min-width: 0;
+    height: 42px;
+    line-height: 1.5;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  .date-input-ios::-webkit-date-and-time-value,
+  .month-input-ios::-webkit-date-and-time-value {
+    min-width: 0;
+    text-align: left;
+  }
+
+  .date-input-ios::-webkit-calendar-picker-indicator,
+  .month-input-ios::-webkit-calendar-picker-indicator {
+    margin: 0;
+    padding: 0;
   }
 
   /* Input error */
@@ -112,9 +136,9 @@
 
   /* Compact filter select */
   .filter-select {
-    @apply px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white
+    @apply px-3 py-2 text-sm border border-gray-300 rounded-md bg-white
            focus:ring-2 focus:ring-primary-500 focus:border-primary-500
-           transition-all duration-base cursor-pointer
+           transition-colors duration-base cursor-pointer
            hover:border-gray-400;
     min-width: 140px;
     appearance: auto;
@@ -123,9 +147,9 @@
   /* Filter reset button */
   .filter-reset-btn {
     @apply px-4 py-2 text-sm font-medium text-red-600 bg-red-50
-           border border-red-200 rounded-lg
+           border border-red-200 rounded-md
            hover:bg-red-100 hover:border-red-300
-           transition-all duration-base cursor-pointer;
+           transition-colors duration-base cursor-pointer;
   }
 
   /* Link hover underline */

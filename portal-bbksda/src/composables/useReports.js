@@ -3,13 +3,12 @@ import {
   collection,
   getDocs,
   getDoc,
-  addDoc,
   updateDoc,
   setDoc,
   doc,
   query,
-  orderBy,
   limit,
+  where,
 } from 'firebase/firestore'
 
 /**
@@ -18,6 +17,26 @@ import {
  */
 export function useReports() {
   const COLLECTION_NAME = 'laporan'
+
+  const getTicketPeriod = (date = new Date()) => {
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    return `${year}${month}`
+  }
+
+  const createTicketSuffix = () => {
+    const bytes = new Uint8Array(4)
+    crypto.getRandomValues(bytes)
+    return Array.from(bytes, (byte) => (byte % 36).toString(36).toUpperCase()).join('')
+  }
+
+  const formatTicketId = (period) => {
+    return `BKSDA-${period}-${createTicketSuffix()}`
+  }
+
+  const normalizeTicketId = (ticketId) => {
+    return String(ticketId || '').trim().toUpperCase()
+  }
 
   /**
    * Fetch all reports from Firestore
@@ -65,37 +84,41 @@ export function useReports() {
   }
 
   /**
-   * Get last report ID for sequential numbering
-   * @returns {Promise<string|null>} Last report ID
+   * Get single report by public ticket ID.
+   * Uses direct document lookup first, then falls back to the idLaporan field
+   * for legacy documents whose document ID may differ from the ticket.
    */
-  const getLastReportId = async () => {
+  const getReportByTicketId = async (ticketId) => {
+    const normalizedTicketId = normalizeTicketId(ticketId)
+    if (!normalizedTicketId) return null
+
+    const directReport = await getReportById(normalizedTicketId)
+    if (directReport) return directReport
+
     try {
-      const q = query(collection(db, COLLECTION_NAME), orderBy('idLaporan', 'desc'), limit(1))
+      const q = query(
+        collection(db, COLLECTION_NAME),
+        where('idLaporan', '==', normalizedTicketId),
+        limit(1),
+      )
       const querySnapshot = await getDocs(q)
 
-      if (!querySnapshot.empty) {
-        const lastDoc = querySnapshot.docs[0]
-        return lastDoc.data().idLaporan
-      }
-      return null
+      if (querySnapshot.empty) return null
+      const reportDoc = querySnapshot.docs[0]
+      return { id: reportDoc.id, ...reportDoc.data() }
     } catch (error) {
-      console.error('Error fetching last report ID:', error)
+      console.error('Error fetching report by ticket ID:', error)
       throw error
     }
   }
 
   /**
    * Generate new report ID
-   * @returns {Promise<string>} New report ID (e.g., LP001, LP002)
+   * @returns {Promise<string>} New report ID (e.g., BKSDA-202606-A7K2)
    */
   const generateNewReportId = async () => {
-    const lastId = await getLastReportId()
-    if (lastId) {
-      const lastNumber = parseInt(lastId.replace('LP', ''), 10)
-      const newNumber = lastNumber + 1
-      return `LP${newNumber.toString().padStart(3, '0')}`
-    }
-    return 'LP001'
+    const period = getTicketPeriod()
+    return formatTicketId(period)
   }
 
   /**
@@ -105,19 +128,26 @@ export function useReports() {
    */
   const createReport = async (reportData) => {
     try {
-      // Generate report ID
-      const newId = await generateNewReportId()
-      reportData.idLaporan = newId
+      const now = new Date()
+      const ticketId = await generateNewReportId()
+      const reportRef = doc(db, COLLECTION_NAME, ticketId)
 
-      // Add default fields
-      reportData.status = 'Menunggu Verifikasi' // status awal sampai diverifikasi admin riset
-      reportData.createdAt = new Date()
+      await setDoc(reportRef, {
+        ...reportData,
+        idLaporan: ticketId,
+        status: 'Menunggu Verifikasi',
+        createdAt: now,
+        statusHistory: [
+          {
+            status: 'Menunggu Verifikasi',
+            timestamp: now,
+            updatedBy: 'Sistem',
+            notes: 'Laporan diterima oleh sistem dan menunggu verifikasi admin.',
+          },
+        ],
+      })
 
-      // Use setDoc with custom ID
-      const docRef = doc(db, COLLECTION_NAME, newId)
-      await setDoc(docRef, reportData)
-
-      return newId
+      return ticketId
     } catch (error) {
       console.error('Error creating report:', error)
       throw error
@@ -143,7 +173,7 @@ export function useReports() {
   return {
     fetchAllReports,
     getReportById,
-    getLastReportId,
+    getReportByTicketId,
     generateNewReportId,
     createReport,
     updateReport,

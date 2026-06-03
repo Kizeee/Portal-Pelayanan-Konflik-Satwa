@@ -1,15 +1,25 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue'
 import L from 'leaflet'
+
+// Ensure L is globally available for plugins
+window.L = L
+import 'leaflet.heat'
+import 'leaflet.markercluster/dist/MarkerCluster.css'
+import 'leaflet.markercluster/dist/MarkerCluster.Default.css'
+import 'leaflet.markercluster'
+
 import riauBoundary from '@/data/riau-boundary.json'
 
 const props = defineProps({
   reports: { type: Array, required: true },
+  viewMode: { type: String, default: 'marker' }
 })
 
 const containerRef = ref(null)
 let map = null
-let markers = L.layerGroup()
+let markers = null // initialized in setupMap
+let heatLayer = null
 
 // ── Warna marker per status ──
 const statusColor = {
@@ -122,35 +132,71 @@ const setupMap = () => {
     },
   }).addTo(map)
 
+  // Initialize marker cluster group
+  markers = L.markerClusterGroup({
+    chunkedLoading: true,
+    spiderfyOnMaxZoom: true,
+    showCoverageOnHover: false,
+    zoomToBoundsOnClick: true,
+    maxClusterRadius: 50
+  })
   markers.addTo(map)
 }
 
-// ── Update markers ──
-const updateMarkers = (newReports) => {
-  if (!map) return
+// ── Update layers (Markers or Heatmap) ──
+const updateLayers = () => {
+  if (!map || !markers) return
+  
+  // Bersihkan layer yang ada
   markers.clearLayers()
-  newReports.forEach(report => {
-    const lat = parseFloat(report.lat)
-    const lng = parseFloat(report.lng)
-    if (!isNaN(lat) && !isNaN(lng)) {
+  if (heatLayer) {
+    map.removeLayer(heatLayer)
+    heatLayer = null
+  }
+
+  // Filter laporan dengan koordinat valid
+  const validReports = props.reports.filter(r => {
+    const lat = parseFloat(r.lat)
+    const lng = parseFloat(r.lng)
+    return !isNaN(lat) && !isNaN(lng)
+  })
+
+  if (props.viewMode === 'heatmap') {
+    // Mode Heatmap
+    const heatData = validReports.map(r => [parseFloat(r.lat), parseFloat(r.lng), 1]) // intensity 1 per report
+    heatLayer = L.heatLayer(heatData, {
+      radius: 25,
+      blur: 15,
+      maxZoom: 14,
+      gradient: { 0.4: 'blue', 0.6: 'cyan', 0.7: 'lime', 0.8: 'yellow', 1: 'red' }
+    }).addTo(map)
+  } else {
+    // Mode Marker
+    validReports.forEach(report => {
+      const lat = parseFloat(report.lat)
+      const lng = parseFloat(report.lng)
       const marker = L.marker([lat, lng], { icon: createColorMarker(getColor(report.status)) })
       marker.bindPopup(buildPopupHtml(report), {
         maxWidth: 280,
         className: 'custom-popup',
       })
       markers.addLayer(marker)
-    }
-  })
+    })
+  }
 }
 
 onMounted(() => {
   setupMap()
-  updateMarkers(props.reports)
+  updateLayers()
 })
 
-watch(() => props.reports, (newReports) => {
-  updateMarkers(newReports)
+watch(() => props.reports, () => {
+  updateLayers()
 }, { deep: true })
+
+watch(() => props.viewMode, () => {
+  updateLayers()
+})
 </script>
 
 <template>

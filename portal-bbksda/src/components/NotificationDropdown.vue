@@ -54,13 +54,12 @@ onUnmounted(() => {
     <!-- Bell Button -->
     <button
       @click.stop="notifStore.toggleDropdown()"
-      class="relative p-2 text-gray-600 hover:text-brand-green rounded-full hover:bg-green-50 transition-all duration-300 focus:outline-none"
+      class="relative p-2 text-gray-600 hover:text-brand-green rounded-full hover:bg-green-50 transition-colors duration-200 focus:outline-none"
       title="Notifikasi"
     >
       <!-- Bell Icon -->
       <svg
-        class="h-6 w-6 transition-transform"
-        :class="{ 'animate-ring': notifStore.unreadCount > 0 }"
+        class="h-6 w-6"
         xmlns="http://www.w3.org/2000/svg"
         fill="none"
         viewBox="0 0 24 24"
@@ -85,7 +84,7 @@ onUnmounted(() => {
       >
         <span
           v-if="notifStore.unreadCount > 0"
-          class="absolute -top-0.5 -right-0.5 flex items-center justify-center h-5 w-5 rounded-full bg-red-500 text-white text-[10px] font-bold ring-2 ring-white animate-pulse-once"
+          class="absolute -top-0.5 -right-0.5 flex items-center justify-center h-5 w-5 rounded-full bg-red-500 text-white text-[10px] font-bold ring-2 ring-white"
         >
           {{ notifStore.unreadCount > 9 ? '9+' : notifStore.unreadCount }}
         </span>
@@ -106,16 +105,16 @@ onUnmounted(() => {
         class="notif-dropdown-panel"
       >
         <!-- Header -->
-        <div class="px-5 py-4 bg-gradient-to-r from-emerald-500 to-green-600 text-white rounded-t-2xl">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <div class="px-5 py-4 bg-brand-green text-white rounded-t-lg">
+          <div class="flex items-center justify-between gap-4">
+            <div class="flex min-w-0 items-center gap-2.5">
+              <svg class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
               </svg>
-              <h3 class="font-bold text-base">Notifikasi</h3>
+              <h3 class="font-bold text-base leading-tight whitespace-nowrap">Notifikasi</h3>
               <span
                 v-if="notifStore.unreadCount > 0"
-                class="bg-white/20 text-white text-xs font-semibold px-2 py-0.5 rounded-full"
+                class="bg-white/20 text-white text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap"
               >
                 {{ notifStore.unreadCount }} baru
               </span>
@@ -123,7 +122,7 @@ onUnmounted(() => {
             <button
               v-if="notifStore.unreadCount > 0"
               @click="notifStore.markAllAsRead()"
-              class="text-xs font-medium text-white/80 hover:text-white transition-colors"
+              class="flex-shrink-0 text-xs font-medium text-white/80 hover:text-white transition-colors whitespace-nowrap"
             >
               Tandai Semua Dibaca
             </button>
@@ -136,7 +135,7 @@ onUnmounted(() => {
             v-for="notif in notifStore.recentNotifications"
             :key="notif.id"
             @click="handleViewReport(notif)"
-            class="px-5 py-4 cursor-pointer transition-all duration-200 hover:bg-green-50/60 relative"
+            class="px-5 py-4 cursor-pointer transition-colors duration-200 hover:bg-green-50/60 relative"
             :class="{ 'bg-emerald-50/50': !notif.read }"
           >
             <!-- Unread Indicator -->
@@ -148,10 +147,12 @@ onUnmounted(() => {
             <div class="flex items-start gap-3">
               <!-- Avatar/Icon -->
               <div
-                class="flex-shrink-0 h-10 w-10 rounded-full flex items-center justify-center text-lg"
-                :class="notif.read ? 'bg-gray-100' : 'bg-gradient-to-br from-emerald-100 to-green-200'"
+                class="flex-shrink-0 h-10 w-10 rounded-full flex items-center justify-center"
+                :class="notif.read ? 'bg-gray-100 text-gray-500' : 'bg-emerald-50 text-brand-green'"
               >
-                🐾
+                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
               </div>
 
               <!-- Content -->
@@ -165,17 +166,17 @@ onUnmounted(() => {
                   </span>
                 </div>
 
-                <p class="text-xs text-gray-600 mt-0.5 truncate">
+                <p class="text-xs text-gray-600 mt-0.5 leading-relaxed">
                   <span class="font-medium text-gray-700">{{ notif.pelapor }}</span>
                   melaporkan <span class="font-medium text-emerald-600">{{ notif.jenisSatwa }}</span>
                 </p>
 
-                <p class="text-xs text-gray-400 mt-0.5 truncate flex items-center gap-1">
-                  <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <p class="text-xs text-gray-400 mt-0.5 flex items-start gap-1 leading-relaxed">
+                  <svg class="h-3 w-3 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                     <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
-                  {{ notif.lokasi }}
+                  <span>{{ notif.lokasi }}</span>
                 </p>
               </div>
             </div>
@@ -211,7 +212,7 @@ onUnmounted(() => {
             @click="notifStore.closeDropdown(); $router.push({ name: 'LihatLaporan' })"
             class="text-xs text-emerald-600 hover:text-emerald-700 transition-colors font-semibold"
           >
-            Lihat Semua Laporan →
+            Lihat Semua Laporan
           </button>
         </div>
       </div>
@@ -225,9 +226,9 @@ onUnmounted(() => {
   z-index: 10000;
   max-height: 480px;
   background: white;
-  border-radius: 1rem;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-  ring: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 0.5rem;
+  box-shadow: 0 12px 28px -18px rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(0, 0, 0, 0.08);
   overflow: hidden;
 }
 
@@ -250,7 +251,7 @@ onUnmounted(() => {
     position: absolute;
     right: 0;
     margin-top: 0.75rem;
-    width: 24rem; /* w-96 */
+    width: min(28rem, calc(100vw - 2rem));
   }
 }
 
@@ -271,12 +272,4 @@ onUnmounted(() => {
   transform-origin: top center;
 }
 
-@keyframes pulse-once {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.2); }
-  100% { transform: scale(1); }
-}
-.animate-pulse-once {
-  animation: pulse-once 0.6s ease-in-out;
-}
 </style>

@@ -6,8 +6,10 @@ import MapDisplay from '../components/MapDisplay.vue'
 const reportsStore = useReportsStore()
 
 // Filter state
-const filterStatus = ref('semua')
-const filterSatwa  = ref('semua')
+const filterStatus    = ref('semua')
+const filterSatwa     = ref('semua')
+const filterPrioritas = ref('semua')
+const viewMode        = ref('marker') // 'marker' or 'heatmap'
 
 // Unique animal types from reports
 const jenisSatwaList = computed(() => {
@@ -20,7 +22,8 @@ const filteredReports = computed(() => {
   return reportsStore.reportsWithCoords.filter(r => {
     const statusOk = filterStatus.value === 'semua' || r.status === filterStatus.value
     const satwaOk  = filterSatwa.value  === 'semua' || r.jenisSatwa === filterSatwa.value
-    return statusOk && satwaOk
+    const prioritasOk = filterPrioritas.value === 'semua' || (r.prioritas || 'Sedang') === filterPrioritas.value
+    return statusOk && satwaOk && prioritasOk
   })
 })
 
@@ -96,6 +99,22 @@ const statusOptions = [
       <!-- Sidebar filter + legend -->
       <aside class="sidebar">
 
+        <!-- View Mode -->
+        <div class="side-section">
+          <h3 class="side-title">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+            Mode Tampilan
+          </h3>
+          <div class="view-mode-toggle">
+            <button :class="{ active: viewMode === 'marker' }" @click="viewMode = 'marker'" class="mode-btn">
+              📍 Marker
+            </button>
+            <button :class="{ active: viewMode === 'heatmap' }" @click="viewMode = 'heatmap'" class="mode-btn">
+              🔥 Heatmap
+            </button>
+          </div>
+        </div>
+
         <!-- Filter -->
         <div class="side-section">
           <h3 class="side-title">
@@ -114,9 +133,18 @@ const statusOptions = [
             <option v-for="satwa in jenisSatwaList" :key="satwa" :value="satwa">{{ satwa }}</option>
           </select>
 
+          <label class="filter-label mt-3">Prioritas</label>
+          <select v-model="filterPrioritas" class="filter-select">
+            <option value="semua">Semua Prioritas</option>
+            <option value="Rendah">Rendah</option>
+            <option value="Sedang">Sedang</option>
+            <option value="Tinggi">Tinggi</option>
+            <option value="Darurat">Darurat</option>
+          </select>
+
           <button
-            v-if="filterStatus !== 'semua' || filterSatwa !== 'semua'"
-            @click="filterStatus = 'semua'; filterSatwa = 'semua'"
+            v-if="filterStatus !== 'semua' || filterSatwa !== 'semua' || filterPrioritas !== 'semua'"
+            @click="filterStatus = 'semua'; filterSatwa = 'semua'; filterPrioritas = 'semua'"
             class="reset-btn"
           >
             ↺ Reset Filter
@@ -145,11 +173,12 @@ const statusOptions = [
         <div v-if="filteredReports.length === 0" class="empty-overlay">
           <div class="empty-box">
             <span class="empty-icon">🗺️</span>
-            <p class="empty-title">Tidak ada titik laporan</p>
+            <p v-if="viewMode === 'heatmap'" class="empty-title">Belum ada data konflik untuk ditampilkan pada heatmap.</p>
+            <p v-else class="empty-title">Tidak ada titik laporan</p>
             <p class="empty-sub">Coba ubah filter untuk menampilkan data</p>
           </div>
         </div>
-        <MapDisplay :reports="filteredReports" />
+        <MapDisplay :reports="filteredReports" :viewMode="viewMode" />
         <div class="map-count-badge">
           {{ filteredReports.length }} titik ditampilkan
         </div>
@@ -308,6 +337,33 @@ const statusOptions = [
   transition: all 0.2s;
 }
 .reset-btn:hover { background: #fee2e2; }
+
+.view-mode-toggle {
+  display: flex;
+  background: #f3f4f6;
+  border-radius: 8px;
+  padding: 0.25rem;
+  gap: 0.25rem;
+}
+.mode-btn {
+  flex: 1;
+  padding: 0.5rem;
+  text-align: center;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: 6px;
+  color: #6b7280;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.mode-btn:hover { color: #374151; }
+.mode-btn.active {
+  background: #fff;
+  color: #0e7a3a;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
 
 .legend-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.45rem; }
 .legend-list li { display: flex; align-items: center; gap: 0.5rem; font-size: 0.78rem; color: #374151; }

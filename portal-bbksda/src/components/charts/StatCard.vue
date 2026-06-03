@@ -37,11 +37,6 @@ watch(() => props.value, (val) => animateCounter(val ?? 0))
 
 <template>
   <div class="stat-card" :class="gradient || color">
-    <!-- Decorative blobs -->
-    <div class="blob blob-1"></div>
-    <div class="blob blob-2"></div>
-
-    <!-- Icon circle -->
     <div class="icon-wrap">
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -55,106 +50,78 @@ watch(() => props.value, (val) => animateCounter(val ?? 0))
       </svg>
     </div>
 
-    <!-- Content -->
     <div class="stat-content">
-      <p class="stat-value">{{ displayValue }}</p>
       <p class="stat-title">{{ title }}</p>
+      <p class="stat-value">{{ displayValue }}</p>
     </div>
-
-    <!-- Bottom bar accent -->
-    <div class="bottom-bar"></div>
   </div>
 </template>
 
 <style scoped>
 .stat-card {
+  --accent: #386641;
   position: relative;
-  overflow: hidden;
-  border-radius: 20px;
-  padding: 1.5rem 1.25rem 1.75rem;
+  border-radius: 8px;
+  padding: 1rem;
   display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
+  align-items: center;
+  gap: 0.9rem;
   cursor: default;
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-left: 4px solid var(--accent);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
 }
 
-.stat-card:hover {
-  transform: translateY(-4px) scale(1.02);
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.18);
-}
-
-/* Gradient presets applied via the gradient prop from parent */
-/* Fallback: if no gradient class is provided, color prop is used */
-
-/* Decorative blobs */
-.blob {
-  position: absolute;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.12);
-  pointer-events: none;
-}
-.blob-1 {
-  width: 110px;
-  height: 110px;
-  top: -30px;
-  right: -30px;
-}
-.blob-2 {
-  width: 70px;
-  height: 70px;
-  bottom: -20px;
-  left: -10px;
-  background: rgba(255, 255, 255, 0.08);
-}
-
-/* Icon */
 .icon-wrap {
-  width: 48px;
-  height: 48px;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.22);
-  backdrop-filter: blur(6px);
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--accent) 12%, white);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #fff;
-  z-index: 1;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  color: var(--accent);
+  flex-shrink: 0;
 }
 
-/* Stat content */
 .stat-content {
-  z-index: 1;
+  min-width: 0;
 }
 
 .stat-value {
-  font-size: 2.4rem;
-  font-weight: 800;
-  color: #fff;
-  line-height: 1;
-  letter-spacing: -0.5px;
-  text-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  margin-top: 0.15rem;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1.1;
+  letter-spacing: 0;
 }
 
 .stat-title {
   font-size: 0.82rem;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.88);
-  margin-top: 0.3rem;
-  letter-spacing: 0.3px;
-  text-transform: uppercase;
+  color: #4b5563;
+  letter-spacing: 0;
 }
 
-/* Bottom accent bar */
-.bottom-bar {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: rgba(255, 255, 255, 0.3);
-  border-radius: 0 0 20px 20px;
+.stat-gradient-green {
+  --accent: #386641;
+}
+
+.stat-gradient-yellow {
+  --accent: #b45309;
+}
+
+.stat-gradient-teal {
+  --accent: #0f766e;
+}
+
+.stat-gradient-blue {
+  --accent: #1d4ed8;
+}
+
+.stat-gradient-red {
+  --accent: #dc2626;
 }
 </style>

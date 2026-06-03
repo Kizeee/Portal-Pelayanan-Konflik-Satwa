@@ -5,6 +5,7 @@ import { useAuthStore } from '../stores/auth'
 const HomePage = () => import('../views/HomePage.vue')
 const LaporPage = () => import('../views/LaporPage.vue')
 const PetaPage = () => import('../views/PetaPage.vue')
+const PanduanPage = () => import('../views/PanduanPage.vue')
 const LaporanSayaPage = () => import('../views/LaporanSayaPage.vue')
 const LoginPage = () => import('../views/LoginPage.vue')
 const DashboardPage = () => import('../views/DashboardPage.vue')
@@ -31,6 +32,12 @@ const routes = [
     name: 'Peta',
     component: PetaPage,
     meta: { title: 'Peta Sebaran' },
+  },
+  {
+    path: '/panduan',
+    name: 'Panduan',
+    component: PanduanPage,
+    meta: { title: 'Panduan Keselamatan' },
   },
   {
     path: '/laporan-saya',

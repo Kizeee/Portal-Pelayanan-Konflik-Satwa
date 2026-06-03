@@ -6,6 +6,7 @@ import { useUIStore } from '../stores/ui'
 import { useAuthStore } from '../stores/auth'
 import { useReports } from '../composables/useReports'
 import { arrayUnion } from 'firebase/firestore'
+import Papa from 'papaparse'
 import UiSearchBar from '../components/base/UiSearchBar.vue'
 import UiCard from '../components/base/UiCard.vue'
 import UiBadge from '../components/base/UiBadge.vue'
@@ -22,6 +23,20 @@ const { updateReport } = useReports()
 // Nomor yang mengirim >= 3 laporan dalam 30 hari terakhir dianggap mencurigakan
 const SUSPICIOUS_THRESHOLD = 3
 const SUSPICIOUS_WINDOW_DAYS = 30
+const STATUS_GROUPS = {
+  pending: ['Menunggu Verifikasi', 'pending'],
+  accepted: ['Diterima', 'verified'],
+  process: ['Dalam Proses', 'Tim Menuju Lokasi', 'Penanganan di Lokasi', 'Diproses'],
+  completed: ['Selesai'],
+  rejected: ['Ditolak', 'Tidak Valid', 'ditolak'],
+}
+
+const hasStatus = (report, statuses) => statuses.includes(report.status)
+const isPendingReport = (report) => hasStatus(report, STATUS_GROUPS.pending)
+const isAcceptedReport = (report) => hasStatus(report, STATUS_GROUPS.accepted)
+const isProcessReport = (report) => hasStatus(report, STATUS_GROUPS.process)
+const isCompletedReport = (report) => hasStatus(report, STATUS_GROUPS.completed)
+const isRejectedReport = (report) => hasStatus(report, STATUS_GROUPS.rejected)
 
 const suspiciousPhones = computed(() => {
   const now = Date.now()
@@ -49,13 +64,39 @@ const isSuspicious = (report) => suspiciousPhones.value.has(report.telepon)
 // Filter khusus laporan mencurigakan
 const showOnlySuspicious = ref(false)
 
+const visibleReports = computed(() => {
+  const baseReports = showOnlySuspicious.value
+    ? reportsStore.filteredReports.filter((r) => isSuspicious(r))
+    : reportsStore.filteredReports
+
+  return baseReports
+})
+
 const displayedReports = computed(() => {
-  if (!showOnlySuspicious.value) return reportsStore.paginatedReports
-  return reportsStore.paginatedReports.filter((r) => isSuspicious(r))
+  const start = (reportsStore.pagination.currentPage - 1) * reportsStore.pagination.itemsPerPage
+  const end = start + reportsStore.pagination.itemsPerPage
+  return visibleReports.value.slice(start, end)
+})
+
+const visibleTotalPages = computed(() => {
+  return Math.max(1, Math.ceil(visibleReports.value.length / reportsStore.pagination.itemsPerPage))
 })
 
 const suspiciousCount = computed(() => {
   return reportsStore.reports.filter((r) => isSuspicious(r)).length
+})
+
+const reportSummary = computed(() => {
+  const reports = reportsStore.filteredReports
+
+  return {
+    pending: reports.filter(isPendingReport).length,
+    accepted: reports.filter(isAcceptedReport).length,
+    process: reports.filter(isProcessReport).length,
+    completed: reports.filter(isCompletedReport).length,
+    rejected: reports.filter(isRejectedReport).length,
+    suspicious: reports.filter((r) => isSuspicious(r)).length,
+  }
 })
 
 // View mode
@@ -101,15 +142,18 @@ const applyDatePreset = (preset) => {
   }
 }
 
+const toggleSuspiciousFilter = () => {
+  showOnlySuspicious.value = !showOnlySuspicious.value
+  reportsStore.setPage(1)
+}
+
 // Status options
 const statusOptions = [
-  { value: '', label: 'Semua Status' },
   { value: 'Menunggu Verifikasi', label: 'Menunggu Verifikasi', color: 'warning' },
   { value: 'Diterima', label: 'Diterima', color: 'info' },
-  { value: 'Tim Menuju Lokasi', label: 'Tim Menuju Lokasi', color: 'info' },
-  { value: 'Penanganan di Lokasi', label: 'Penanganan di Lokasi', color: 'info' },
+  { value: 'Dalam Proses', label: 'Dalam Proses', color: 'info' },
   { value: 'Selesai', label: 'Selesai', color: 'success' },
-  { value: 'Ditolak', label: 'Ditolak', color: 'error' },
+  { value: 'Ditolak', label: 'Ditolak/Tidak Valid', color: 'error' },
 ]
 
 // Toggle status filter
@@ -148,12 +192,13 @@ const handleViewDetail = (reportId) => {
 
 // Pagination
 const goToPage = (page) => {
-  reportsStore.setPage(page)
+  const safePage = Math.min(Math.max(page, 1), visibleTotalPages.value)
+  reportsStore.setPage(safePage)
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
 const paginationRange = computed(() => {
-  const total = reportsStore.totalPages
+  const total = visibleTotalPages.value
   const current = reportsStore.pagination.currentPage
   const range = []
 
@@ -169,8 +214,12 @@ const paginationRange = computed(() => {
 
 const canVerify = computed(() => {
   if (!selectedForVerification.value) return false
-  const s = selectedForVerification.value.status
-  return s === 'Menunggu Verifikasi' || s === 'pending' || s === 'Diterima'
+  return isPendingReport(selectedForVerification.value)
+})
+
+const canReject = computed(() => {
+  if (!selectedForVerification.value) return false
+  return !isCompletedReport(selectedForVerification.value) && !isRejectedReport(selectedForVerification.value)
 })
 
 // Format date for display
@@ -185,11 +234,76 @@ const formatRupiah = (value) => {
   return new Intl.NumberFormat('id-ID').format(Number(value))
 }
 
+// ===== EXPORT CSV =====
+const exportCSV = () => {
+  let dataToMap = reportsStore.filteredReports
+  if (showOnlySuspicious.value) {
+    dataToMap = dataToMap.filter(r => isSuspicious(r))
+  }
+
+  if (dataToMap.length === 0) {
+    uiStore.showNotification('error', 'Gagal', 'Tidak ada data laporan untuk diexport.')
+    return
+  }
+
+  const dataToExport = dataToMap.map(report => {
+    let completedAt = ''
+    let updatedBy = ''
+    let notes = ''
+    
+    if (report.statusHistory && report.statusHistory.length > 0) {
+      const historyItems = [...report.statusHistory]
+      const lastEntry = historyItems[historyItems.length - 1]
+      updatedBy = lastEntry.updatedBy || ''
+      notes = lastEntry.notes || ''
+      
+      const selesaiEntry = historyItems.find(h => h.status === 'Selesai')
+      if (selesaiEntry) {
+        completedAt = formatDate(selesaiEntry.timestamp)
+      }
+    }
+
+    return {
+      'ID Laporan': report.idLaporan || report.id,
+      'Nama Pelapor': report.nama,
+      'Telepon': report.telepon,
+      'Jenis Satwa': report.jenisSatwa,
+      'Kategori Konflik': report.kategoriKonflik || '-',
+      'Prioritas': report.prioritas || 'Sedang',
+      'Lokasi': report.lokasi,
+      'Kabupaten/Kota': report.kabupatenKota || '-',
+      'Tanggal Kejadian': formatDate(report.tanggal),
+      'Tanggal Dilaporkan': formatDate(report.createdAt),
+      'Status Laporan': report.status,
+      'Estimasi Kerugian': report.estimasi_kerugian ? `Rp ${report.estimasi_kerugian}` : '-',
+      'Status Satwa Akhir': report.status_satwa_akhir || '-',
+      'Tanggal Selesai': completedAt || '-',
+      'Petugas Penanganan': updatedBy || '-',
+      'Catatan Admin': notes || '-'
+    }
+  })
+
+  const csv = Papa.unparse(dataToExport)
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  
+  const link = document.createElement('a')
+  link.setAttribute('href', url)
+  link.setAttribute('download', `Export_Laporan_BBKSDA_${new Date().toISOString().slice(0, 10)}.csv`)
+  link.style.visibility = 'hidden'
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  
+  uiStore.showNotification('success', 'Berhasil', 'Data laporan berhasil diexport ke CSV.')
+}
+
 // ===== Verifikasi laporan riset =====
 const selectedForVerification = ref(null)
 const verificationForm = ref({
   estimasi_kerugian: '',
   status_satwa_akhir: '',
+  catatan_admin: '',
 })
 const isSavingVerification = ref(false)
 
@@ -198,6 +312,7 @@ const openVerification = (report) => {
   verificationForm.value = {
     estimasi_kerugian: report.estimasi_kerugian ?? '',
     status_satwa_akhir: report.status_satwa_akhir || '',
+    catatan_admin: '',
   }
 }
 
@@ -206,11 +321,19 @@ const clearVerification = () => {
   verificationForm.value = {
     estimasi_kerugian: '',
     status_satwa_akhir: '',
+    catatan_admin: '',
   }
 }
 
-const saveVerification = async (markVerified = false) => {
+const saveVerification = async (action = 'save') => {
   if (!selectedForVerification.value) return
+
+  const notes = verificationForm.value.catatan_admin?.trim() || ''
+
+  if (action === 'reject' && !notes) {
+    uiStore.showNotification('error', 'Catatan diperlukan', 'Isi alasan singkat sebelum menandai laporan tidak valid.')
+    return
+  }
 
   isSavingVerification.value = true
   const payload = {
@@ -221,16 +344,32 @@ const saveVerification = async (markVerified = false) => {
     status_satwa_akhir: verificationForm.value.status_satwa_akhir?.trim() || '',
   }
 
-  if (markVerified) {
+  if (action === 'accept') {
     payload.status = 'Diterima'
-    // Tambahkan entri statusHistory agar watcher warga menerima catatan
     payload.statusHistory = arrayUnion({
       status: 'Diterima',
       timestamp: new Date(),
       updatedBy: authStore.user?.email || 'Admin',
-      notes: verificationForm.value.status_satwa_akhir?.trim()
-        ? `Status satwa: ${verificationForm.value.status_satwa_akhir.trim()}`
-        : 'Laporan telah diverifikasi dan diterima oleh admin.',
+      notes: notes || 'Laporan telah diverifikasi dan diterima oleh admin.',
+    })
+  }
+
+  if (action === 'save' && notes) {
+    payload.statusHistory = arrayUnion({
+      status: selectedForVerification.value.status || 'Menunggu Verifikasi',
+      timestamp: new Date(),
+      updatedBy: authStore.user?.email || 'Admin',
+      notes,
+    })
+  }
+
+  if (action === 'reject') {
+    payload.status = 'Ditolak'
+    payload.statusHistory = arrayUnion({
+      status: 'Ditolak',
+      timestamp: new Date(),
+      updatedBy: authStore.user?.email || 'Admin',
+      notes,
     })
   }
 
@@ -242,8 +381,12 @@ const saveVerification = async (markVerified = false) => {
     selectedForVerification.value = reportsStore.reports.find((r) => r.id === selectedForVerification.value.id)
     uiStore.showNotification(
       'success',
-      markVerified ? 'Laporan terverifikasi' : 'Perubahan disimpan',
-      markVerified ? 'Status laporan berubah menjadi Diterima.' : 'Data tambahan tersimpan.'
+      action === 'accept' ? 'Laporan diterima' : action === 'reject' ? 'Laporan ditandai tidak valid' : 'Perubahan disimpan',
+      action === 'accept'
+        ? 'Status laporan berubah menjadi Diterima.'
+        : action === 'reject'
+          ? 'Status laporan berubah menjadi Ditolak/Tidak Valid.'
+          : 'Data tambahan tersimpan.'
     )
   } catch (error) {
     console.error('Gagal menyimpan verifikasi:', error)
@@ -252,6 +395,16 @@ const saveVerification = async (markVerified = false) => {
     isSavingVerification.value = false
   }
 }
+
+// Helper untuk warna badge prioritas
+const prioritasClass = (p) => {
+  const pStr = p || 'Sedang'
+  if (pStr === 'Rendah') return 'bg-green-100 text-green-800 border-green-200'
+  if (pStr === 'Sedang') return 'bg-orange-100 text-orange-800 border-orange-200'
+  if (pStr === 'Tinggi') return 'bg-pink-100 text-pink-800 border-pink-200'
+  if (pStr === 'Darurat') return 'bg-red-600 text-white font-bold border-red-700 shadow-sm'
+  return 'bg-gray-100 text-gray-800 border-gray-200'
+}
 </script>
 
 <template>
@@ -259,10 +412,10 @@ const saveVerification = async (markVerified = false) => {
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-3">
       <div>
-        <h2 class="text-2xl sm:text-3xl font-bold text-gradient-primary mb-1 sm:mb-2">Kelola Laporan</h2>
+        <h2 class="text-2xl sm:text-3xl font-bold text-brand-green mb-1 sm:mb-2">Kelola Laporan</h2>
         <p class="text-gray-600 text-sm sm:text-base">
           Menampilkan
-          <span class="font-semibold text-primary-600">{{ reportsStore.filteredReports.length }}</span>
+          <span class="font-semibold text-primary-600">{{ visibleReports.length }}</span>
           dari {{ reportsStore.reports.length }} laporan
         </p>
       </div>
@@ -272,7 +425,7 @@ const saveVerification = async (markVerified = false) => {
         <button
           @click="viewMode = 'grid'"
           :class="viewMode === 'grid' ? 'bg-primary-500 text-white' : 'bg-gray-100 text-gray-600'"
-          class="px-4 py-2 rounded-lg transition-colors"
+          class="px-4 py-2 rounded-md transition-colors border"
         >
           <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path
@@ -286,7 +439,7 @@ const saveVerification = async (markVerified = false) => {
         <button
           @click="viewMode = 'list'"
           :class="viewMode === 'list' ? 'bg-primary-500 text-white' : 'bg-gray-100 text-gray-600'"
-          class="px-4 py-2 rounded-lg transition-colors"
+          class="px-4 py-2 rounded-md transition-colors border"
         >
           <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path
@@ -300,13 +453,41 @@ const saveVerification = async (markVerified = false) => {
       </div>
     </div>
 
+    <!-- Ringkasan Status -->
+    <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 mb-6">
+      <div class="bg-white border border-gray-200 rounded-lg p-4">
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Menunggu</p>
+        <p class="mt-1 text-2xl font-bold text-yellow-700">{{ reportSummary.pending }}</p>
+      </div>
+      <div class="bg-white border border-gray-200 rounded-lg p-4">
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Diterima</p>
+        <p class="mt-1 text-2xl font-bold text-blue-700">{{ reportSummary.accepted }}</p>
+      </div>
+      <div class="bg-white border border-gray-200 rounded-lg p-4">
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Proses</p>
+        <p class="mt-1 text-2xl font-bold text-indigo-700">{{ reportSummary.process }}</p>
+      </div>
+      <div class="bg-white border border-gray-200 rounded-lg p-4">
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Selesai</p>
+        <p class="mt-1 text-2xl font-bold text-green-700">{{ reportSummary.completed }}</p>
+      </div>
+      <div class="bg-white border border-gray-200 rounded-lg p-4">
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Tidak Valid</p>
+        <p class="mt-1 text-2xl font-bold text-red-700">{{ reportSummary.rejected }}</p>
+      </div>
+      <div class="bg-white border border-gray-200 rounded-lg p-4">
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Mencurigakan</p>
+        <p class="mt-1 text-2xl font-bold text-gray-800">{{ reportSummary.suspicious }}</p>
+      </div>
+    </div>
+
     <!-- Filter Panel -->
-    <UiCard class="mb-6" padding="p-5">
+    <UiCard class="mb-6" variant="outlined" padding="p-5">
       <!-- Search Bar -->
       <UiSearchBar
         v-model="reportsStore.filters.search"
         placeholder="Cari berdasarkan ID, nama, lokasi, jenis satwa..."
-        :result-count="reportsStore.filteredReports.length"
+        :result-count="visibleReports.length"
         class="mb-4"
       />
 
@@ -331,6 +512,19 @@ const saveVerification = async (markVerified = false) => {
         >
           <option value="">Semua Jenis Satwa</option>
           <option v-for="type in reportsStore.animalTypes" :key="type" :value="type">{{ type }}</option>
+        </select>
+
+        <!-- Prioritas Filter -->
+        <select
+          :value="reportsStore.filters.prioritas.length === 1 ? reportsStore.filters.prioritas[0] : ''"
+          @change="(e) => reportsStore.updateFilters({ prioritas: e.target.value ? [e.target.value] : [] })"
+          class="filter-select"
+        >
+          <option value="">Semua Prioritas</option>
+          <option value="Rendah">Rendah</option>
+          <option value="Sedang">Sedang</option>
+          <option value="Tinggi">Tinggi</option>
+          <option value="Darurat">Darurat</option>
         </select>
 
         <!-- Date Range Preset -->
@@ -370,14 +564,14 @@ const saveVerification = async (markVerified = false) => {
 
         <!-- Filter Mencurigakan -->
         <button
-          @click="showOnlySuspicious = !showOnlySuspicious"
+          @click="toggleSuspiciousFilter"
           :class="[
-            'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold border transition-all',
+            'flex items-center gap-2 px-4 py-2 rounded-md text-sm font-semibold border transition-colors',
             showOnlySuspicious
-              ? 'bg-red-500 text-white border-red-500 shadow-md'
+              ? 'bg-red-600 text-white border-red-600'
               : 'bg-white text-red-600 border-red-300 hover:bg-red-50'
           ]"
-          :title="`${suspiciousCount} laporan dari nomor yang mengirim ≥${SUSPICIOUS_THRESHOLD}x dalam ${SUSPICIOUS_WINDOW_DAYS} hari`"
+          :title="`${suspiciousCount} laporan dari nomor yang mengirim >=${SUSPICIOUS_THRESHOLD}x dalam ${SUSPICIOUS_WINDOW_DAYS} hari`"
         >
           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -388,13 +582,25 @@ const saveVerification = async (markVerified = false) => {
           </span>
         </button>
 
+        <!-- Export CSV -->
+        <button
+          @click="exportCSV"
+          class="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-semibold border transition-colors bg-white text-brand-green border-gray-300 hover:border-brand-green hover:bg-primary-50"
+          title="Export data ke CSV"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          Export CSV
+        </button>
+
         <!-- Reset Filters -->
         <button
           v-if="reportsStore.hasActiveFilters || showOnlySuspicious"
           @click="reportsStore.clearFilters(); showOnlySuspicious = false"
           class="filter-reset-btn"
         >
-          ✕ Reset Filter
+          Reset Filter
         </button>
       </div>
     </UiCard>
@@ -407,8 +613,8 @@ const saveVerification = async (markVerified = false) => {
 
     <!-- No Results -->
     <div
-      v-else-if="reportsStore.filteredReports.length === 0"
-      class="text-center py-20 bg-gray-50 rounded-xl"
+      v-else-if="visibleReports.length === 0"
+      class="text-center py-20 bg-gray-50 rounded-lg border border-gray-200"
     >
       <svg
         class="mx-auto h-24 w-24 text-gray-400 mb-4"
@@ -424,8 +630,8 @@ const saveVerification = async (markVerified = false) => {
         />
       </svg>
       <p class="text-xl font-semibold text-gray-700 mb-2">Tidak ada laporan ditemukan</p>
-      <p class="text-gray-500 mb-4">Coba sesuaikan filter pencarian Anda</p>
-      <UiButton @click="reportsStore.clearFilters()" variant="primary">
+      <p class="text-gray-500 mb-4">Coba sesuaikan filter pencarian</p>
+      <UiButton @click="reportsStore.clearFilters(); showOnlySuspicious = false" variant="primary">
         Hapus Semua Filter
       </UiButton>
     </div>
@@ -441,16 +647,19 @@ const saveVerification = async (markVerified = false) => {
         hoverable
         clickable
         @click="handleViewDetail(report.id)"
-        class="animate-slide-up"
-        :class="{ 'ring-2 ring-red-300': isSuspicious(report) }"
+        padding="p-0"
+        class="h-full overflow-hidden border border-gray-200"
+        :class="{ 'ring-1 ring-red-200 border-red-200': isSuspicious(report) }"
       >
-        <div class="flex justify-between items-start mb-3">
-          <div class="flex items-center gap-2">
-            <h3 class="text-xl font-bold text-primary-700 font-mono">{{ report.idLaporan }}</h3>
+        <div class="p-5 pb-4">
+        <div class="flex justify-between items-start gap-3 mb-4">
+          <div class="min-w-0">
+            <p class="text-xs font-semibold uppercase tracking-wide text-gray-400">ID Laporan</p>
+            <h3 class="mt-1 text-xl font-bold text-primary-700 font-mono leading-none">{{ report.idLaporan }}</h3>
             <!-- Flag mencurigakan -->
             <span
               v-if="isSuspicious(report)"
-              class="inline-flex items-center gap-1 bg-red-100 text-red-700 text-xs font-bold px-2 py-0.5 rounded-full border border-red-200"
+              class="mt-3 inline-flex items-center gap-1.5 bg-red-50 text-red-700 text-xs font-semibold px-2.5 py-1 rounded-md border border-red-200"
               :title="`Nomor ${report.telepon} telah mengirim ${SUSPICIOUS_THRESHOLD}+ laporan dalam ${SUSPICIOUS_WINDOW_DAYS} hari terakhir`"
             >
               <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -459,18 +668,18 @@ const saveVerification = async (markVerified = false) => {
               Mencurigakan
             </span>
           </div>
-          <div class="flex items-center gap-2">
-            <UiBadge :status="report.status" size="md" dot />
-            <UiButton variant="outline" size="xs" @click.stop="openVerification(report)">
-              Verifikasi
-            </UiButton>
+          <div class="flex items-center gap-2 flex-wrap justify-end">
+            <span :class="prioritasClass(report.prioritas)" class="text-xs px-2.5 py-1 rounded-full border font-semibold">
+              {{ report.prioritas || 'Sedang' }}
+            </span>
+            <UiBadge :status="report.status" size="sm" dot />
           </div>
         </div>
 
-        <div class="space-y-2 text-sm">
-          <div class="flex items-center text-gray-600">
-            <span class="text-2xl mr-2"></span>
-            <strong class="font-semibold text-gray-800">{{ report.jenisSatwa }}</strong>
+        <div class="space-y-3 text-sm text-gray-600">
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-wide text-gray-400">Jenis Satwa</p>
+            <strong class="mt-1 block text-lg leading-snug font-bold text-gray-900">{{ report.jenisSatwa }}</strong>
           </div>
 
           <div class="flex items-center text-gray-600">
@@ -545,16 +754,21 @@ const saveVerification = async (markVerified = false) => {
           </div>
         </div>
 
-        <div class="mt-4 pt-4 border-t border-gray-200">
-          <UiButton variant="primary" size="sm" block>
-            Lihat Detail →
+        </div>
+
+        <div class="grid grid-cols-2 gap-3 border-t border-gray-100 bg-gray-50 p-4">
+          <UiButton variant="outline" size="sm" @click.stop="openVerification(report)" class="bg-white">
+            Periksa
+          </UiButton>
+          <UiButton variant="primary" size="sm" @click.stop="handleViewDetail(report.id)">
+            Lihat Detail
           </UiButton>
         </div>
       </UiCard>
     </div>
 
     <!-- List View -->
-    <div v-else-if="viewMode === 'list'" class="bg-white rounded-xl shadow-card overflow-hidden">
+    <div v-else-if="viewMode === 'list'" class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
       <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
@@ -576,6 +790,9 @@ const saveVerification = async (markVerified = false) => {
               </th>
               <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                 Tanggal
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                Prioritas
               </th>
               <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                 Status
@@ -607,7 +824,7 @@ const saveVerification = async (markVerified = false) => {
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                     </svg>
-                    ⚠
+                    !
                   </span>
                 </div>
               </td>
@@ -623,6 +840,11 @@ const saveVerification = async (markVerified = false) => {
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                 {{ formatDate(report.createdAt) }}
               </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm">
+                <span :class="prioritasClass(report.prioritas)" class="px-2 py-1 text-xs rounded-full border">
+                  {{ report.prioritas || 'Sedang' }}
+                </span>
+              </td>
               <td class="px-6 py-4 whitespace-nowrap">
                 <UiBadge :status="report.status" size="sm" />
               </td>
@@ -637,7 +859,7 @@ const saveVerification = async (markVerified = false) => {
                   @click.stop="openVerification(report)"
                   class="ml-3 text-secondary-600 hover:text-secondary-800 font-medium"
                 >
-                  Verifikasi
+                  Periksa
                 </button>
               </td>
             </tr>
@@ -649,11 +871,11 @@ const saveVerification = async (markVerified = false) => {
     <!-- Modal Popup Verifikasi Admin Riset -->
     <div
       v-if="selectedForVerification"
-      class="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm transition-opacity"
+      class="fixed inset-0 z-[10000] flex items-start md:items-center justify-center overflow-y-auto bg-gray-900/60 p-4 pt-[calc(1rem_+_env(safe-area-inset-top))] pb-[calc(1rem_+_env(safe-area-inset-bottom))] backdrop-blur-sm transition-opacity"
       @click="clearVerification"
     >
       <div 
-        class="bg-white rounded-2xl shadow-xl w-full max-w-4xl overflow-hidden flex flex-col md:flex-row transform transition-all"
+        class="bg-white rounded-lg shadow-lg w-full max-w-4xl max-h-[calc(100dvh_-_2rem_-_env(safe-area-inset-top)_-_env(safe-area-inset-bottom))] overflow-y-auto flex flex-col md:flex-row transform transition-all"
         @click.stop
       >
         <!-- Info Column -->
@@ -663,23 +885,23 @@ const saveVerification = async (markVerified = false) => {
           </div>
           
           <div class="space-y-4">
-            <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+            <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
               <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-1">ID Laporan</p>
               <p class="font-mono font-bold text-primary-700 text-lg">{{ selectedForVerification.idLaporan }}</p>
             </div>
             
             <div class="grid grid-cols-2 gap-4">
-              <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+              <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
                  <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-1">Jenis Satwa</p>
                  <p class="font-semibold text-gray-800">{{ selectedForVerification.jenisSatwa }}</p>
               </div>
-              <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+              <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
                  <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-1">Kategori</p>
                  <p class="font-semibold text-gray-800">{{ selectedForVerification.kategoriKonflik || '-' }}</p>
               </div>
             </div>
 
-            <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between">
+            <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm flex items-center justify-between">
               <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Status Saat Ini</p>
               <UiBadge :status="selectedForVerification.status" size="sm" />
             </div>
@@ -694,9 +916,9 @@ const saveVerification = async (markVerified = false) => {
             </svg>
           </button>
           
-          <h4 class="text-xl font-semibold text-gray-800 mb-6 mt-2 md:mt-0">Tindakan Admin</h4>
+          <h4 class="text-xl font-semibold text-gray-800 mb-5 pr-10 mt-1 md:mt-0">Tindakan Admin</h4>
           
-          <form @submit.prevent="saveVerification(false)" class="space-y-6 flex flex-col h-full">
+          <form @submit.prevent="saveVerification('save')" class="space-y-6 flex flex-col h-full">
             <div class="space-y-4">
               <div>
                 <label for="estimasi" class="block text-sm font-semibold text-gray-700 mb-2">Estimasi Kerugian (Rp)</label>
@@ -707,7 +929,7 @@ const saveVerification = async (markVerified = false) => {
                     type="number"
                     min="0"
                     v-model="verificationForm.estimasi_kerugian"
-                    class="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-colors"
+                    class="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-colors"
                     placeholder="Contoh: 5000000"
                   />
                 </div>
@@ -719,19 +941,30 @@ const saveVerification = async (markVerified = false) => {
                   id="status-satwa"
                   type="text"
                   v-model="verificationForm.status_satwa_akhir"
-                  class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-colors"
+                  class="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-colors"
                   placeholder="Misal: Dievakuasi ke pusat rehabilitasi"
                 />
               </div>
+
+              <div>
+                <label for="catatan-admin" class="block text-sm font-semibold text-gray-700 mb-2">Catatan Admin</label>
+                <textarea
+                  id="catatan-admin"
+                  rows="3"
+                  v-model="verificationForm.catatan_admin"
+                  class="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-colors resize-none"
+                  placeholder="Contoh: data sudah dikonfirmasi melalui telepon, atau alasan laporan tidak valid"
+                ></textarea>
+              </div>
             </div>
 
-            <div class="mt-auto pt-4 flex flex-col sm:flex-row gap-3">
+            <div class="mt-auto pt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
               <UiButton
                 type="button"
                 variant="primary"
                 :disabled="!canVerify || isSavingVerification"
-                @click="saveVerification(true)"
-                class="flex-1 justify-center py-3"
+                @click="saveVerification('accept')"
+                class="justify-center py-3"
               >
                 {{ isSavingVerification ? 'Memproses...' : 'Terima / Verifikasi' }}
               </UiButton>
@@ -739,9 +972,18 @@ const saveVerification = async (markVerified = false) => {
                 type="submit" 
                 variant="outline" 
                 :loading="isSavingVerification"
-                class="flex-1 justify-center py-3"
+                class="justify-center py-3"
               >
                 Simpan Catatan
+              </UiButton>
+              <UiButton
+                type="button"
+                variant="danger"
+                :disabled="!canReject || isSavingVerification"
+                @click="saveVerification('reject')"
+                class="justify-center py-3"
+              >
+                Tidak Valid
               </UiButton>
             </div>
           </form>
@@ -751,15 +993,15 @@ const saveVerification = async (markVerified = false) => {
 
     <!-- Pagination -->
     <div
-      v-if="reportsStore.totalPages > 1"
+      v-if="visibleTotalPages > 1"
       class="mt-8 flex flex-col sm:flex-row items-center justify-between"
     >
       <p class="text-sm text-gray-600 mb-4 sm:mb-0">
         Menampilkan
         {{ ((reportsStore.pagination.currentPage - 1) * reportsStore.pagination.itemsPerPage) + 1 }}
         -
-        {{ Math.min(reportsStore.pagination.currentPage * reportsStore.pagination.itemsPerPage, reportsStore.filteredReports.length) }}
-        dari {{ reportsStore.filteredReports.length }} laporan
+        {{ Math.min(reportsStore.pagination.currentPage * reportsStore.pagination.itemsPerPage, visibleReports.length) }}
+        dari {{ visibleReports.length }} laporan
       </p>
 
       <div class="flex items-center space-x-2">
@@ -769,7 +1011,7 @@ const saveVerification = async (markVerified = false) => {
           :disabled="reportsStore.pagination.currentPage === 1"
           class="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          ←
+          Sebelumnya
         </button>
 
         <!-- Page Numbers -->
@@ -790,10 +1032,10 @@ const saveVerification = async (markVerified = false) => {
         <!-- Next Button -->
         <button
           @click="goToPage(reportsStore.pagination.currentPage + 1)"
-          :disabled="reportsStore.pagination.currentPage === reportsStore.totalPages"
+          :disabled="reportsStore.pagination.currentPage === visibleTotalPages"
           class="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          →
+          Berikutnya
         </button>
       </div>
     </div>

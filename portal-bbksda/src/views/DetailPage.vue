@@ -95,6 +95,15 @@ const statusClass = (status) => {
   return classes[status] || 'bg-gray-100 text-gray-800';
 };
 
+const prioritasClass = (p) => {
+  const pStr = p || 'Sedang'
+  if (pStr === 'Rendah') return 'bg-green-100 text-green-800 border-green-200'
+  if (pStr === 'Sedang') return 'bg-orange-100 text-orange-800 border-orange-200'
+  if (pStr === 'Tinggi') return 'bg-pink-100 text-pink-800 border-pink-200'
+  if (pStr === 'Darurat') return 'bg-red-600 text-white font-bold border-red-700 shadow-sm'
+  return 'bg-gray-100 text-gray-800 border-gray-200'
+}
+
 const reportPdfContent = ref(null);
 const downloadPDF = () => {
   const element = reportPdfContent.value;
@@ -126,13 +135,18 @@ const isSubmitting = ref(false);
       Kembali ke Daftar Laporan
     </button>
     
-    <div ref="reportPdfContent" class="bg-white p-8 rounded-2xl shadow-lg">
+    <div ref="reportPdfContent" class="bg-white p-8 rounded-lg border border-gray-200 shadow-sm">
       <div class="flex justify-between items-start mb-6 border-b pb-6">
         <div>
           <h2 class="text-4xl font-bold text-brand-green">{{ report.jenisSatwa }}</h2>
           <p class="text-gray-500 mt-1">ID Laporan: {{ report.idLaporan || report.id }}</p>
         </div>
-        <span :class="statusClass(report.status)" class="text-base font-semibold px-4 py-2 rounded-full">{{ report.status }}</span>
+        <div class="flex flex-col items-end gap-2">
+          <span :class="prioritasClass(report.prioritas)" class="text-sm px-3 py-1 rounded-full border">
+            Prioritas: {{ report.prioritas || 'Sedang' }}
+          </span>
+          <span :class="statusClass(report.status)" class="text-base font-semibold px-4 py-2 rounded-full">{{ report.status }}</span>
+        </div>
       </div>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 mt-6">
         <div><p class="font-semibold text-gray-500">Nama Pelapor</p><p class="text-lg">{{ report.nama }}</p></div>
@@ -162,7 +176,7 @@ const isSubmitting = ref(false);
         
         <div v-if="report.videoUrl" class="md:col-span-2 mb-6">
           <p class="font-semibold text-gray-500 mb-2">Video Kejadian</p>
-          <a :href="report.videoUrl" target="_blank" rel="noopener noreferrer" class="relative block w-full max-w-sm bg-black rounded-lg group cursor-pointer shadow-md overflow-hidden" style="aspect-ratio: 16 / 9;">
+          <a :href="report.videoUrl" target="_blank" rel="noopener noreferrer" class="relative block w-full max-w-sm bg-black rounded-md group cursor-pointer shadow-sm overflow-hidden" style="aspect-ratio: 16 / 9;">
             <div class="absolute inset-0 bg-black opacity-40 group-hover:opacity-50 transition-opacity"></div>
             <div class="absolute inset-0 flex items-center justify-center">
               <div class="w-14 h-14 bg-white/30 rounded-full flex items-center justify-center group-hover:bg-white/50 group-hover:scale-110 transition-all">
@@ -178,7 +192,7 @@ const isSubmitting = ref(false);
           <div class="mt-2 grid grid-cols-2 gap-4">
             <div v-for="(url, index) in report.imageUrls" :key="index">
               <a :href="url" target="_blank" rel="noopener noreferrer">
-                <img :src="url" alt="Foto Kejadian" class="w-full h-48 object-cover rounded-lg shadow-md hover:scale-105 transition-transform duration-300">
+                <img :src="url" alt="Foto Kejadian" class="w-full h-48 object-cover rounded-md shadow-sm hover:opacity-90 transition-opacity duration-200">
               </a>
             </div>
           </div>
@@ -203,7 +217,7 @@ const isSubmitting = ref(false);
       </div>
     </div>
     
-    <div v-if="authStore.user" class="bg-white p-8 rounded-2xl shadow-lg mt-6">
+    <div v-if="authStore.user" class="bg-white p-8 rounded-lg border border-gray-200 shadow-sm mt-6">
       <h3 class="text-xl font-bold mb-4 text-brand-green">Panel Admin</h3>
       <div class="bg-gray-50 p-4 rounded-lg">
         <label for="status-select" class="block text-sm font-semibold text-gray-700 mb-1">Ubah Status Laporan</label>

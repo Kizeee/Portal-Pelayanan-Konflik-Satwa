@@ -58,6 +58,27 @@ const removePending = async (id) => {
 }
 
 // ====== Helper Upload & Firestore ======
+const getTicketPeriod = (date = new Date()) => {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  return `${year}${month}`
+}
+
+const createTicketSuffix = () => {
+  const bytes = new Uint8Array(4)
+  crypto.getRandomValues(bytes)
+  return Array.from(bytes, (byte) => (byte % 36).toString(36).toUpperCase()).join('')
+}
+
+const formatTicketId = (period) => {
+  return `BKSDA-${period}-${createTicketSuffix()}`
+}
+
+const generateNewReportId = async () => {
+  const period = getTicketPeriod()
+  return formatTicketId(period)
+}
+
 const uploadQueuedFiles = async (files = []) => {
   if (!files.length) {
     return { imageUrls: [], videoUrl: null }
@@ -84,37 +105,6 @@ const uploadQueuedFiles = async (files = []) => {
   return { imageUrls, videoUrl }
 }
 
-const fetchLastReportId = async () => {
-  const body = {
-    structuredQuery: {
-      from: [{ collectionId: 'laporan' }],
-      orderBy: [{ field: { fieldPath: 'idLaporan' }, direction: 'DESCENDING' }],
-      limit: 1,
-    },
-  }
-
-  const res = await fetch(`${FIRESTORE_BASE}/documents:runQuery?key=${FIREBASE_API_KEY}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  })
-
-  if (!res.ok) return null
-  const json = await res.json()
-  const doc = json.find((item) => item.document)?.document
-  return doc?.fields?.idLaporan?.stringValue || null
-}
-
-const generateNewReportId = async () => {
-  const lastId = await fetchLastReportId()
-  if (lastId) {
-    const lastNumber = parseInt(lastId.replace('LP', ''), 10)
-    const next = lastNumber + 1
-    return `LP${String(next).padStart(3, '0')}`
-  }
-  return 'LP001'
-}
-
 const toFirestoreFields = (data) => {
   const fields = {
     nama: { stringValue: data.nama || '' },
@@ -122,9 +112,11 @@ const toFirestoreFields = (data) => {
     tanggal: { stringValue: data.tanggal || '' },
     jenisSatwa: { stringValue: data.jenisSatwa || '' },
     kategoriKonflik: { stringValue: data.kategoriKonflik || '' },
+    kabupatenKota: { stringValue: data.kabupatenKota || '' },
     lokasi: { stringValue: data.lokasi || '' },
     lat: data.lat ? { doubleValue: Number(data.lat) } : { nullValue: null },
     lng: data.lng ? { doubleValue: Number(data.lng) } : { nullValue: null },
+    prioritas: { stringValue: data.prioritas || 'Sedang' },
     deskripsi: { stringValue: data.deskripsi || '' },
     idLaporan: { stringValue: data.idLaporan },
     status: { stringValue: data.status || 'Menunggu Verifikasi' },

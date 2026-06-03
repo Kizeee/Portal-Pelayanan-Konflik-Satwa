@@ -16,7 +16,6 @@ const isLoading = ref(false)
 const error = ref('')
 
 const handleLogin = async () => {
-  // Simple validation
   if (!email.value || !password.value) {
     error.value = 'Email dan password wajib diisi'
     return
@@ -45,7 +44,7 @@ const handleLogin = async () => {
 
 <template>
   <div class="flex items-center justify-center min-h-[70vh] px-4">
-    <div class="bg-white p-6 sm:p-10 rounded-2xl shadow-xl w-full max-w-md">
+    <div class="bg-white p-6 sm:p-10 rounded-lg border border-gray-200 shadow-sm w-full max-w-md">
       <h2 class="text-2xl sm:text-3xl font-bold mb-2 text-center text-brand-green">Login Admin</h2>
       <p class="text-center text-gray-500 mb-6 sm:mb-8 text-sm sm:text-base">Masukkan kredensial Anda untuk melanjutkan</p>
 
@@ -64,7 +63,7 @@ const handleLogin = async () => {
             type="email"
             v-model="email"
             id="email"
-            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
+            class="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
             placeholder="admin@example.com"
             required
           />
@@ -79,8 +78,8 @@ const handleLogin = async () => {
             type="password"
             v-model="password"
             id="password"
-            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
-            placeholder="••••••••"
+            class="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
+            placeholder="Masukkan password"
             required
           />
         </div>
@@ -89,7 +88,7 @@ const handleLogin = async () => {
         <button
           type="submit"
           :disabled="isLoading"
-          class="w-full bg-gradient-to-r from-brand-green to-brand-green-light text-white font-bold py-3 rounded-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+          class="w-full bg-brand-green text-white font-bold py-3 rounded-md hover:bg-brand-green-light transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <span v-if="!isLoading">Login</span>
           <span v-else class="flex items-center justify-center">
