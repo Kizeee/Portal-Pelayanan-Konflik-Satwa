@@ -11,6 +11,22 @@ let map = null;
 let marker = null;
 
 const defaultCenter = [0.5104, 101.4383];
+const boundaryStyle = {
+  color: '#ef5b3f',
+  weight: 3,
+  opacity: 0.95,
+  fillOpacity: 0,
+  dashArray: '1, 8',
+  lineCap: 'round',
+  lineJoin: 'round',
+};
+
+const locationMarkerIcon = L.divIcon({
+  className: 'location-circle-marker',
+  html: '<span></span>',
+  iconSize: [22, 22],
+  iconAnchor: [11, 11],
+});
 
 const isLocating = ref(false);
 const locationAccuracy = ref(null);
@@ -76,7 +92,8 @@ const searchLocation = () => {
 
 const selectLocation = (location) => {
   const latLng = [parseFloat(location.lat), parseFloat(location.lon)];
-  map.setView(latLng, 15);
+  // Animasi flyTo agar ada efek zoom-in yang mulus saat memilih hasil pencarian
+  map.flyTo(latLng, 15, { animate: true, duration: 1.2 });
   marker.setLatLng(latLng);
   validateAndEmit(latLng[0], latLng[1]);
   
@@ -96,7 +113,8 @@ const getUserLocation = () => {
           lat: position.coords.latitude,
           lng: position.coords.longitude,
         };
-        map.setView(userLatLng, 15);
+        // Animasi flyTo agar ada efek zoom-in dramatis saat GPS ditemukan
+        map.flyTo([userLatLng.lat, userLatLng.lng], 15, { animate: true, duration: 1.2 });
         marker.setLatLng(userLatLng);
         validateAndEmit(userLatLng.lat, userLatLng.lng);
         locationAccuracy.value = position.coords.accuracy;
@@ -132,18 +150,13 @@ onMounted(() => {
 
   // Tampilkan batas wilayah Riau di peta sebagai visual guide
   L.geoJSON(riauBoundary, {
-    style: {
-      color: '#0e7a3a',
-      weight: 2,
-      opacity: 0.7,
-      fillColor: '#16a34a',
-      fillOpacity: 0.05,
-      dashArray: '6, 4',
-    },
+    style: boundaryStyle,
+    interactive: false,
   }).addTo(map);
 
   marker = L.marker(defaultCenter, {
     draggable: true,
+    icon: locationMarkerIcon,
   }).addTo(map);
 
   // Validasi posisi awal marker (default center)
@@ -209,7 +222,7 @@ onMounted(() => {
     
     <!-- Info wilayah layanan -->
     <div class="flex items-center gap-2 mb-2 px-1">
-      <span class="inline-block w-4 h-0.5 border-t-2 border-dashed" style="border-color: #0e7a3a;"></span>
+      <span class="boundary-dot-sample"></span>
       <span class="text-xs text-gray-500">Batas wilayah layanan BBKSDA Riau</span>
     </div>
 
@@ -261,5 +274,32 @@ onMounted(() => {
 .map-container {
   height: 400px;
   width: 100%;
+}
+
+.boundary-dot-sample {
+  width: 28px;
+  height: 3px;
+  display: inline-block;
+  background-image: radial-gradient(circle, #ef5b3f 1.5px, transparent 1.6px);
+  background-size: 8px 3px;
+  background-repeat: repeat-x;
+  background-position: left center;
+  flex-shrink: 0;
+}
+
+:deep(.location-circle-marker) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+:deep(.location-circle-marker span) {
+  width: 14px;
+  height: 14px;
+  display: block;
+  border: 3px solid #ffffff;
+  border-radius: 999px;
+  background: #ef5b3f;
+  box-shadow: 0 6px 16px rgba(17, 24, 39, 0.28);
 }
 </style>

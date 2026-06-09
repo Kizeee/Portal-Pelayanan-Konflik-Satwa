@@ -1,3 +1,9 @@
+<script setup>
+import { useAuthStore } from '../stores/auth'
+
+const authStore = useAuthStore()
+</script>
+
 <template>
   <footer class="bg-stone-800 text-white mt-12">
     <div class="container mx-auto py-8 px-4 sm:px-6 lg:px-8">
@@ -19,12 +25,81 @@
         <!-- Tautan Cepat -->
         <div>
           <h4 class="text-sm font-bold mb-4 text-stone-300 uppercase tracking-wider">Tautan Cepat</h4>
-          <ul class="space-y-2 text-sm text-stone-400">
-            <li><router-link :to="{ name: 'Home' }" class="hover:text-forest-300 transition-colors">Beranda</router-link></li>
-            <li><router-link :to="{ name: 'Lapor' }" class="hover:text-forest-300 transition-colors">Buat Laporan</router-link></li>
-            <li><router-link :to="{ name: 'Peta' }" class="hover:text-forest-300 transition-colors">Peta Sebaran</router-link></li>
-            <li><router-link :to="{ name: 'Panduan' }" class="hover:text-forest-300 transition-colors">Panduan Keselamatan</router-link></li>
-          </ul>
+
+          <!-- Tautan untuk Admin (sudah login) -->
+          <template v-if="authStore.user">
+            <ul class="space-y-2 text-sm text-stone-400">
+              <li>
+                <router-link :to="{ name: 'Dashboard' }" class="hover:text-forest-300 transition-colors flex items-center justify-center md:justify-start gap-1.5">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-stone-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+                  </svg>
+                  Statistik
+                </router-link>
+              </li>
+              <li>
+                <router-link :to="{ name: 'Peta' }" class="hover:text-forest-300 transition-colors flex items-center justify-center md:justify-start gap-1.5">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-stone-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/>
+                  </svg>
+                  Peta Sebaran
+                </router-link>
+              </li>
+              <li>
+                <router-link :to="{ name: 'LihatLaporan' }" class="hover:text-forest-300 transition-colors flex items-center justify-center md:justify-start gap-1.5">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-stone-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                  </svg>
+                  Semua Laporan
+                </router-link>
+              </li>
+            </ul>
+            <!-- Badge penanda akses admin -->
+            <p class="mt-3 inline-flex items-center gap-1 text-xs text-amber-400/80 border border-amber-500/30 rounded-full px-2 py-0.5">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+              </svg>
+              Akses Admin
+            </p>
+          </template>
+
+          <!-- Tautan untuk Masyarakat (belum login) -->
+          <template v-else>
+            <ul class="space-y-2 text-sm text-stone-400">
+              <li>
+                <router-link :to="{ name: 'Home' }" class="hover:text-forest-300 transition-colors flex items-center justify-center md:justify-start gap-1.5">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-stone-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+                  </svg>
+                  Beranda
+                </router-link>
+              </li>
+              <li>
+                <router-link :to="{ name: 'Lapor' }" class="hover:text-forest-300 transition-colors flex items-center justify-center md:justify-start gap-1.5">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-stone-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                  </svg>
+                  Buat Laporan
+                </router-link>
+              </li>
+              <li>
+                <router-link :to="{ name: 'LaporanSaya' }" class="hover:text-forest-300 transition-colors flex items-center justify-center md:justify-start gap-1.5">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-stone-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                  </svg>
+                  Laporan Saya
+                </router-link>
+              </li>
+              <li>
+                <router-link :to="{ name: 'Panduan' }" class="hover:text-forest-300 transition-colors flex items-center justify-center md:justify-start gap-1.5">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-stone-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                  Panduan Keselamatan
+                </router-link>
+              </li>
+            </ul>
+          </template>
         </div>
 
         <!-- Kontak -->

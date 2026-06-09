@@ -149,7 +149,6 @@ onMounted(() => {
       </div>
     </section>
 
-    <!-- ALUR PENANGANAN LAPORAN - STUNNING TIMELINE -->
     <section class="hp-timeline-section hp-animate">
       <div class="hp-section-header">
         <h2 class="hp-section-title">Alur Penanganan Laporan</h2>

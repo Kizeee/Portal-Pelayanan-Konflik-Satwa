@@ -3,6 +3,7 @@
  *
  * Menggunakan algoritma Ray-Casting (point-in-polygon) untuk menentukan
  * apakah sebuah titik koordinat berada di dalam batas wilayah Provinsi Riau.
+ * Mendukung tipe geometry GeoJSON: Polygon dan MultiPolygon.
  *
  * @module coordinateValidator
  */
@@ -10,12 +11,13 @@
 import riauBoundary from '@/data/riau-boundary.json'
 
 // ── Bounding Box cepat untuk Provinsi Riau ──
-// Digunakan sebagai filter awal sebelum menjalankan algoritma PIP yang lebih berat.
+// Diperluas untuk mencakup Kepulauan Meranti (hingga 103.9°BT) dan
+// batas utara Rokan Hilir yang benar (~2.75°LU).
 const RIAU_BBOX = {
-  minLat: -0.25,
-  maxLat: 2.25,
+  minLat: -1.10,
+  maxLat: 2.75,
   minLng: 99.90,
-  maxLng: 103.70,
+  maxLng: 103.90,
 }
 
 // Bounding box longgar untuk Indonesia (sebagai fallback validasi minimal)
@@ -27,11 +29,25 @@ const INDONESIA_BBOX = {
 }
 
 /**
- * Mengambil koordinat polygon Riau dari GeoJSON.
- * @returns {Array<[number, number]>} Array koordinat [lng, lat]
+ * Mengambil semua ring koordinat polygon dari GeoJSON.
+ * Mendukung tipe Polygon (array satu ring) dan MultiPolygon (array banyak ring).
+ *
+ * @returns {Array<Array<[number, number]>>} Array of polygon rings, each ring = array of [lng, lat]
  */
-const getRiauPolygon = () => {
-  return riauBoundary.features[0].geometry.coordinates[0]
+const getRiauPolygons = () => {
+  const feature = riauBoundary.features[0]
+  const geometry = feature.geometry
+
+  if (geometry.type === 'Polygon') {
+    // Polygon: coordinates = [ ring0, ring1, ... ] — ambil outer ring saja
+    return [geometry.coordinates[0]]
+  } else if (geometry.type === 'MultiPolygon') {
+    // MultiPolygon: coordinates = [ [ [ring0], ... ], [ [ring0], ... ], ... ]
+    // Ambil outer ring (index 0) dari setiap polygon
+    return geometry.coordinates.map((polygon) => polygon[0])
+  }
+
+  return []
 }
 
 /**
@@ -90,7 +106,8 @@ const isInBoundingBox = (lat, lng, bbox) => {
  * 1. Cek apakah koordinat valid (bukan NaN/null)
  * 2. Cek apakah berada di Indonesia (bounding box)
  * 3. Cek apakah berada di bounding box Riau (filter cepat)
- * 4. Cek apakah berada di dalam polygon Riau (presisi)
+ * 4. Cek apakah berada di dalam salah satu polygon Riau (presisi)
+ *    — mendukung MultiPolygon (mainland + Bengkalis + Kepulauan Meranti)
  *
  * @param {number|string} lat - Latitude titik
  * @param {number|string} lng - Longitude titik
@@ -118,7 +135,7 @@ export const validateCoordinate = (lat, lng) => {
     }
   }
 
-  // 3. Filter cepat: cek bounding box Riau
+  // 3. Filter cepat: cek bounding box Riau (termasuk Kepulauan Meranti)
   if (!isInBoundingBox(numLat, numLng, RIAU_BBOX)) {
     return {
       valid: false,
@@ -128,9 +145,14 @@ export const validateCoordinate = (lat, lng) => {
     }
   }
 
-  // 4. Cek presisi dengan polygon Riau
-  const polygon = getRiauPolygon()
-  if (!isPointInPolygon(numLat, numLng, polygon)) {
+  // 4. Cek presisi: apakah titik berada di SALAH SATU polygon Riau
+  //    (daratan utama, Bengkalis/Rupat, atau Kepulauan Meranti)
+  const polygons = getRiauPolygons()
+  const inAnyPolygon = polygons.some((polygon) =>
+    isPointInPolygon(numLat, numLng, polygon)
+  )
+
+  if (!inAnyPolygon) {
     return {
       valid: false,
       code: 'OUTSIDE_RIAU',

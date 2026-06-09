@@ -64,28 +64,50 @@ const statusOptions = [
     <!-- ── SUMMARY CARDS ── -->
     <div class="summary-grid">
       <div class="summary-card card-total">
-        <div class="card-icon">📋</div>
+        <div class="card-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M12 21s6-5.1 6-10a6 6 0 1 0-12 0c0 4.9 6 10 6 10Z" />
+            <path d="M12 13.2a2.2 2.2 0 1 0 0-4.4 2.2 2.2 0 0 0 0 4.4Z" />
+          </svg>
+        </div>
         <div>
           <p class="card-num">{{ total }}</p>
           <p class="card-lbl">Total Titik</p>
         </div>
       </div>
       <div class="summary-card card-menunggu">
-        <div class="card-icon">⏳</div>
+        <div class="card-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="8.5" />
+            <path d="M12 7.5V12l3 1.8" />
+          </svg>
+        </div>
         <div>
           <p class="card-num">{{ menunggu }}</p>
           <p class="card-lbl">Menunggu</p>
         </div>
       </div>
       <div class="summary-card card-diproses">
-        <div class="card-icon">🚨</div>
+        <div class="card-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M5 17.5c1.9-4.2 4.2-6.3 7-6.3 1.5 0 2.7.6 3.8 1.7" />
+            <path d="M15.2 8.2h4.1v4.1" />
+            <path d="M19.1 8.4 14.8 13" />
+            <path d="M5 19h14" />
+          </svg>
+        </div>
         <div>
           <p class="card-num">{{ diproses }}</p>
           <p class="card-lbl">Diproses</p>
         </div>
       </div>
       <div class="summary-card card-selesai">
-        <div class="card-icon">✅</div>
+        <div class="card-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="8.5" />
+            <path d="m8.2 12.2 2.4 2.4 5.2-5.4" />
+          </svg>
+        </div>
         <div>
           <p class="card-num">{{ selesai }}</p>
           <p class="card-lbl">Selesai</p>
@@ -254,15 +276,34 @@ const statusOptions = [
   padding: 1rem 1.25rem;
   border-radius: 14px;
   color: #fff;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.12);
+  box-shadow: 0 3px 12px rgba(15,23,42,0.09);
   transition: transform 0.2s;
 }
-.summary-card:hover { transform: translateY(-3px); }
-.card-total    { background: linear-gradient(135deg, #2d6a4f, #52b788); }
-.card-menunggu { background: linear-gradient(135deg, #b45309, #fbbf24); }
-.card-diproses { background: linear-gradient(135deg, #6d28d9, #a78bfa); }
-.card-selesai  { background: linear-gradient(135deg, #0f766e, #2dd4bf); }
-.card-icon { font-size: 1.6rem; }
+.summary-card:hover { transform: translateY(-2px); }
+.card-total    { background: linear-gradient(135deg, #315f49, #6f9f83); }
+.card-menunggu { background: linear-gradient(135deg, #8a6330, #c39a4d); }
+.card-diproses { background: linear-gradient(135deg, #4f5f7a, #7890ad); }
+.card-selesai  { background: linear-gradient(135deg, #376f68, #76a99f); }
+.card-icon {
+  width: 2.15rem;
+  height: 2.15rem;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  background: rgba(255,255,255,0.11);
+  border: 1px solid rgba(255,255,255,0.16);
+}
+.card-icon svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.9;
+}
 .card-num  { font-size: 1.6rem; font-weight: 800; line-height: 1; }
 .card-lbl  { font-size: 0.75rem; opacity: 0.88; margin-top: 0.15rem; font-weight: 600; }
 

@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref, onUnmounted, computed } from 'vue'
+import { onMounted, ref, onUnmounted, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useReportsStore } from '../stores/reports'
 import { useUIStore } from '../stores/ui'
@@ -94,6 +94,175 @@ const kabupatenKotaOptions = [
   'Kabupaten Bengkalis',
   'Kabupaten Kepulauan Meranti'
 ]
+
+// --- DATA KECAMATAN BERDASARKAN KABUPATEN/KOTA ---
+const kecamatanByKabupaten = {
+  'Kota Pekanbaru': [
+    'Bukit Raya', 'Lima Puluh', 'Marpoyan Damai', 'Payung Sekaki',
+    'Pekanbaru Kota', 'Rumbai', 'Rumbai Pesisir', 'Sail',
+    'Senapelan', 'Sukajadi', 'Tampan', 'Tenayan Raya'
+  ],
+  'Kota Dumai': [
+    'Bukit Kapur', 'Dumai Barat', 'Dumai Kota', 'Dumai Selatan',
+    'Dumai Timur', 'Medang Kampai', 'Sungai Sembilan'
+  ],
+  'Kabupaten Kampar': [
+    'Bangkinang', 'Bangkinang Kota', 'Gunung Sahilan', 'Kampar',
+    'Kampar Kiri', 'Kampar Kiri Hilir', 'Kampar Kiri Hulu', 'Kampar Kiri Tengah',
+    'Kampar Timur', 'Kampar Utara', 'Koto Kampar Hulu', 'Kuok',
+    'Perhentian Raja', 'Rumbio Jaya', 'Salo', 'Siak Hulu',
+    'Tambang', 'Tapung', 'Tapung Hilir', 'Tapung Hulu', 'XIII Koto Kampar'
+  ],
+  'Kabupaten Siak': [
+    'Bunga Raya', 'Dayun', 'Kandis', 'Kerinci Kanan',
+    'Koto Gasib', 'Lubuk Dalam', 'Minas', 'Pusako',
+    'Sabak Auh', 'Siak', 'Sungai Apit', 'Sungai Mandau', 'Tualang'
+  ],
+  'Kabupaten Pelalawan': [
+    'Bandar Petalangan', 'Bunut', 'Kerumutan', 'Kuala Kampar',
+    'Langgam', 'Pangkalan Kerinci', 'Pangkalan Kuras',
+    'Pangkalan Lesung', 'Pelalawan', 'Teluk Meranti', 'Ukui'
+  ],
+  'Kabupaten Indragiri Hulu': [
+    'Batang Cenaku', 'Batang Gansal', 'Kelayang', 'Kuala Cenaku',
+    'Lirik', 'Lubuk Batu Jaya', 'Pasir Penyu', 'Peranap',
+    'Rakit Kulim', 'Rengat', 'Rengat Barat', 'Seberida', 'Sungai Lala'
+  ],
+  'Kabupaten Indragiri Hilir': [
+    'Batang Tuaka', 'Concong', 'Enok', 'Gaung', 'Gaung Anak Serka',
+    'Kateman', 'Kempas', 'Keritang', 'Kuala Indragiri', 'Mandah',
+    'Pelangiran', 'Pulau Burung', 'Pulau Kijang', 'Reteh',
+    'Sungai Batang', 'Tanah Merah', 'Tembilahan', 'Tembilahan Hulu',
+    'Teluk Belengkong', 'Tempuling'
+  ],
+  'Kabupaten Kuantan Singingi': [
+    'Benai', 'Cerenti', 'Gunung Toar', 'Hulu Kuantan',
+    'Inuman', 'Kuantan Hilir', 'Kuantan Hilir Seberang',
+    'Kuantan Mudik', 'Kuantan Tengah', 'Logas Tanah Darat',
+    'Pangean', 'Pucuk Rantau', 'Sentajo Raya', 'Singingi', 'Singingi Hilir'
+  ],
+  'Kabupaten Rokan Hulu': [
+    'Bangun Purba', 'Bonai Darussalam', 'Kabun', 'Kepenuhan',
+    'Kepenuhan Hulu', 'Kunto Darussalam', 'Pagaran Tapah Darussalam',
+    'Pendalian IV Koto', 'Rambah', 'Rambah Hilir', 'Rambah Samo',
+    'Rokan IV Koto', 'Tambusai', 'Tambusai Utara', 'Tandun', 'Ujung Batu'
+  ],
+  'Kabupaten Rokan Hilir': [
+    'Bagan Sinembah', 'Balai Jaya', 'Bangko', 'Bangko Pusako',
+    'Batu Hampar', 'Kubu', 'Kubu Babussalam', 'Pasir Limau Kapas',
+    'Pekaitan', 'Pujud', 'Rantau Kopar', 'Rimba Melintang',
+    'Simpang Kanan', 'Sinaboi', 'Tanah Putih',
+    'Tanah Putih Tanjung Melawan', 'Tanjung Medan'
+  ],
+  'Kabupaten Bengkalis': [
+    'Bantan', 'Bathin Solapan', 'Bengkalis', 'Bukit Batu',
+    'Mandau', 'Pinggir', 'Rupat', 'Rupat Utara',
+    'Siak Kecil', 'Talang Kandis'
+  ],
+  'Kabupaten Kepulauan Meranti': [
+    'Merbau', 'Pulau Merbau', 'Rangsang', 'Rangsang Barat',
+    'Rangsang Pesisir', 'Tasik Putri Puyu',
+    'Tebing Tinggi', 'Tebing Tinggi Barat', 'Tebing Tinggi Timur'
+  ],
+}
+
+// --- DATA KELURAHAN/DESA BERDASARKAN KECAMATAN ---
+const kelurahanByKecamatan = {
+  // Kota Pekanbaru
+  'Tampan': ['Simpang Baru', 'Tobek Godang', 'Bina Widya', 'Delima', 'Tuah Karya', 'Sidomulyo Barat'],
+  'Payung Sekaki': ['Tampan', 'Air Hitam', 'Labuh Baru Barat', 'Labuh Baru Timur', 'Sungai Sibam'],
+  'Bukit Raya': ['Simpang Tiga', 'Tangkerang Laney', 'Tangkerang Tengah', 'Tangkerang Selatan', 'Tangkerang Utara', 'Wonorejo'],
+  'Marpoyan Damai': ['Tangkerang Barat', 'Sidomulyo Timur', 'Maharatu', 'Wonorejo', 'Tuah Madani'],
+  'Tenayan Raya': ['Kulim', 'Mentangor', 'Bencah Lesung', 'Rejosari', 'Bambu Kuning', 'Industri Tenayan'],
+  'Lima Puluh': ['Rintis', 'Sekip', 'Tanjung Rhu', 'Pesisir'],
+  'Sail': ['Cinta Raja', 'Sail', 'Tenayan'],
+  'Pekanbaru Kota': ['Simpang Empat', 'Kota Baru', 'Suka Mulya', 'Sukaramai', 'Sumahilang', 'Tanah Datar'],
+  'Sukajadi': ['Pulau Karam', 'Jadirejo', 'Kampung Melayu', 'Kampung Tengah', 'Harjosari', 'Kedungsari'],
+  'Senapelan': ['Kampung Bandar', 'Kampung Dalam', 'Kampung Baru', 'Padang Terubuk', 'Padang Bulan', 'Sago'],
+  'Rumbai': ['Umban Sari', 'Rumbai Bukit', 'Langsat', 'Muara Fajar Barat', 'Muara Fajar Timur', 'Sri Meranti'],
+  'Rumbai Pesisir': ['Lembah Damai', 'Lembah Sari', 'Meranti Pandak', 'Limbungan', 'Tebing Tinggi Okura', 'Rantau Panjang'],
+  // Kota Dumai
+  'Dumai Kota': ['Bintan', 'Dumai Kota', 'Pangkalan Sesai', 'Sukajadi'],
+  'Dumai Barat': ['Bagan Keladi', 'Batu Teritip', 'Pangkalan Lapam', 'Rimba Sekampung', 'Tanjung Penyembal'],
+  'Dumai Timur': ['Jaya Mukti', 'Bukit Batrem', 'Bukit Timah', 'Dumai Timur', 'Gurun Panjang'],
+  'Dumai Selatan': ['Bukit Timah', 'Mekar Sari', 'Ratu Sima', 'Bukit Nenas', 'Teluk Makmur'],
+  'Sungai Sembilan': ['Bangsal Aceh', 'Basilam Baru', 'Lubuk Gaung', 'Mundam'],
+  'Bukit Kapur': ['Bagan Besar', 'Bukit Kapur', 'Gurun Panjang', 'Kampung Baru'],
+  'Medang Kampai': ['Guntung', 'Pelintung', 'Sepahat'],
+  // Kabupaten Kampar
+  'Bangkinang Kota': ['Bangkinang', 'Langgini', 'Pasir Sialang', 'Bangkinang Barat'],
+  'Bangkinang': ['Muara Uwai', 'Kumantan', 'Salo Timur', 'Sipungguk'],
+  'Tapung': ['Pantai Cermin', 'Senapalan', 'Sei Putih', 'Karya Indah'],
+  'Tapung Hulu': ['Rimba Jaya', 'Bencah Umbai', 'Giti', 'Suka Mulya'],
+  'Tapung Hilir': ['Petapahan', 'Tanah Tinggi', 'Suka Mulya', 'Sei Agung'],
+  'Kampar Kiri': ['Lipat Kain', 'Tanjung Karang', 'Teluk Paman', 'Sungai Pagar'],
+  'XIII Koto Kampar': ['Muara Takus', 'Desa Baru', 'Koto Mesjid', 'Tanjung'],
+  'Siak Hulu': ['Pangkalan Baru', 'Buluh Cina', 'Tanah Merah', 'Teratak Buluh'],
+  'Tambang': ['Tambang', 'Kuapan', 'Sei Pinang', 'Rimbo Panjang'],
+  'Kampar': ['Kampar', 'Air Tiris', 'Pulau Tinggi', 'Batu Belah'],
+  // Kabupaten Siak
+  'Siak': ['Siak', 'Benteng Hulu', 'Benteng Hilir', 'Tumang', 'Langkai'],
+  'Tualang': ['Tualang', 'Perawang', 'Pinang Sebatang', 'Perawang Barat'],
+  'Kandis': ['Kandis', 'Beringin', 'Sam-sam', 'Kandis Kota'],
+  'Minas': ['Minas Barat', 'Minas Timur', 'Minas Jaya', 'Rantau Bertuah'],
+  'Sungai Mandau': ['Muara Kelantan', 'Sungai Mandau', 'Olak'],
+  // Kabupaten Pelalawan
+  'Pangkalan Kerinci': ['Pangkalan Kerinci', 'Pangkalan Kerinci Barat', 'Kerinci Kanan', 'Kerinci Barat'],
+  'Pangkalan Kuras': ['Pangkalan Kuras', 'Betung', 'Kesuma', 'Terantang Manuk'],
+  'Ukui': ['Ukui', 'Air Emas', 'Silikuan Hulu', 'Soga'],
+  'Langgam': ['Langgam', 'Tambak', 'Sotol', 'Padang Luas'],
+  'Pelalawan': ['Pelalawan', 'Delik', 'Kuala Tolam', 'Sering'],
+  // Kabupaten Indragiri Hulu
+  'Rengat': ['Rengat', 'Pematang Reba', 'Kotabaru Reteh', 'Rengat Barat'],
+  'Lirik': ['Lirik', 'Sekar Mawar', 'Belilas', 'Sungai Lala'],
+  'Peranap': ['Peranap', 'Sengkemang', 'Gumanti', 'Talang Jerinjing'],
+  'Pasir Penyu': ['Air Molek', 'Pasir Penyu', 'Sei Lala'],
+  'Batang Gansal': ['Seberida', 'Genduang', 'Siambul'],
+  // Kabupaten Indragiri Hilir
+  'Tembilahan': ['Tembilahan', 'Tembilahan Hilir', 'Tembilahan Kota', 'Seberang Tembilahan'],
+  'Tembilahan Hulu': ['Tembilahan Hulu', 'Sungai Salak', 'Sungai Beringin'],
+  'Enok': ['Enok', 'Teluk Pinang', 'Tanjung Lajau'],
+  'Reteh': ['Pulau Kijang', 'Seberang Pulau Kijang', 'Mekar Sari'],
+  'Kateman': ['Kateman', 'Igal', 'Sungai Luar'],
+  'Mandah': ['Mandah', 'Pulau Cawan', 'Anak Setatah'],
+  // Kabupaten Kuantan Singingi
+  'Kuantan Tengah': ['Beringin', 'Koto Tuo', 'Pasar Taluk', 'Sitorajo', 'Koto Kari'],
+  'Singingi': ['Muara Lembu', 'Petai', 'Bumi Mulya', 'Gema'],
+  'Singingi Hilir': ['Koto Baru', 'Simpang Raya', 'Logas', 'Sumber Datar'],
+  'Benai': ['Benai', 'Teluk Beringin', 'Banjar Benai'],
+  'Cerenti': ['Cerenti', 'Tanjung Medan', 'Pulau Baru Kopung'],
+  'Kuantan Mudik': ['Lubuk Jambi', 'Lubuk Ramo', 'Sungai Pinang'],
+  // Kabupaten Rokan Hulu
+  'Rambah': ['Rambah', 'Pasir Baru', 'Suka Maju', 'Menaming'],
+  'Tambusai': ['Tambusai', 'Tambusai Batang Dui', 'Sungai Kumango'],
+  'Kunto Darussalam': ['Kunto Darussalam', 'Sontang', 'Lubuk Bendahara'],
+  'Ujung Batu': ['Ujung Batu', 'Ngaso', 'Pasir Agung'],
+  'Rokan IV Koto': ['Rokan', 'Alahan', 'Sungai Dua Indah'],
+  // Kabupaten Rokan Hilir
+  'Bangko': ['Bagansiapi-api', 'Bagan Kota', 'Bagan Punak', 'Bagan Barat'],
+  'Bagan Sinembah': ['Bagan Sinembah', 'Bagan Sinembah Raya', 'Bagan Batu'],
+  'Tanah Putih': ['Tanah Putih', 'Ujung Tanjung', 'Sedinginan'],
+  'Sinaboi': ['Sinaboi', 'Sungai Bakau', 'Darussalam'],
+  'Kubu': ['Teluk Merbau', 'Rantau Bais', 'Kubu'],
+  // Kabupaten Bengkalis
+  'Bengkalis': ['Bengkalis', 'Meskom', 'Senggoro', 'Kuala Alam'],
+  'Mandau': ['Air Jamban', 'Duri Barat', 'Duri Timur', 'Gajah Sakti', 'Batang Serosa'],
+  'Pinggir': ['Pinggir', 'Beringin', 'Balai Raja', 'Muara Basung'],
+  'Bukit Batu': ['Buruk Bakul', 'Senderang', 'Pematang Duku', 'Api-api'],
+  'Rupat': ['Terkul', 'Pergam', 'Hutan Panjang'],
+  'Bantan': ['Bantan', 'Selat Baru', 'Bantan Air'],
+  // Kabupaten Kepulauan Meranti
+  'Tebing Tinggi': ['Selatpanjang', 'Selatpanjang Selatan', 'Selatpanjang Barat', 'Selatpanjang Timur', 'Selatpanjang Kota'],
+  'Tebing Tinggi Barat': ['Tanjung Sari', 'Sungai Tohor', 'Mekar Sari'],
+  'Tebing Tinggi Timur': ['Sungai Tohor Barat', 'Nipah Sendanu'],
+  'Rangsang': ['Tanjung Medang', 'Bokor', 'Sungai Tohor Timur'],
+  'Rangsang Barat': ['Rangsang', 'Tanjung Samak', 'Sendanu Darul Ihsan'],
+  'Rangsang Pesisir': ['Lemang', 'Lukit', 'Segomeng'],
+  'Merbau': ['Teluk Belitung', 'Semukut', 'Sungai Anak Kamal'],
+  'Pulau Merbau': ['Renak Dungun', 'Centai', 'Mengkopot'],
+  'Tasik Putri Puyu': ['Tasik Putri Puyu', 'Dedap', 'Mengkirau'],
+}
+
 const prioritasOptions = ['Rendah', 'Sedang', 'Tinggi', 'Darurat']
 const prioritasHelp = {
   'Rendah': 'Satwa hanya terlihat melintas atau berada jauh dari permukiman warga.',
@@ -107,7 +276,9 @@ const newLaporan = ref({
   tanggal: new Date().toISOString().slice(0, 10),
   jenisSatwa: '',
   kategoriKonflik: '',
-  kabupatenKota: '', 
+  kabupatenKota: '',
+  kecamatan: '',
+  kelurahan: '',
   lokasi: '', 
   lat: null,
   lng: null,
@@ -115,8 +286,30 @@ const newLaporan = ref({
   deskripsi: '',
   idLaporan: '',
 })
+
+// Computed: daftar kecamatan berdasarkan kabupaten dipilih
+const availableKecamatan = computed(() => {
+  return kecamatanByKabupaten[newLaporan.value.kabupatenKota] || []
+})
+
+// Computed: daftar kelurahan/desa berdasarkan kecamatan dipilih
+const availableKelurahan = computed(() => {
+  return kelurahanByKecamatan[newLaporan.value.kecamatan] || []
+})
+
+// Reset kecamatan & kelurahan saat kabupaten/kota berubah
+watch(() => newLaporan.value.kabupatenKota, () => {
+  newLaporan.value.kecamatan = ''
+  newLaporan.value.kelurahan = ''
+})
+
+// Reset kelurahan saat kecamatan berubah
+watch(() => newLaporan.value.kecamatan, () => {
+  newLaporan.value.kelurahan = ''
+})
 const errors = ref({})
-const isCoordinateValid = ref(true) 
+const isCoordinateValid = ref(true)
+const isCopied = ref(false) // state visual tombol Salin ID
 
 const selectedFiles = ref([]) 
 const previewUrls = ref([]) 
@@ -181,6 +374,8 @@ const resetForm = () => {
     jenisSatwa: '',
     kategoriKonflik: '',
     kabupatenKota: '',
+    kecamatan: '',
+    kelurahan: '',
     lokasi: '',
     lat: null,
     lng: null,
@@ -199,12 +394,28 @@ const resetForm = () => {
 
 const copyTicketId = async () => {
   if (!visibleTicketId.value) return
+  const textToCopy = visibleTicketId.value
 
   try {
-    await navigator.clipboard.writeText(visibleTicketId.value)
-    uiStore.showNotification('success', 'ID Disalin', 'ID Tiket berhasil disalin.')
+    // Clipboard API modern (HTTPS / localhost)
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(textToCopy)
+    } else {
+      // Fallback: execCommand untuk browser lama atau HTTP non-secure
+      const textArea = document.createElement('textarea')
+      textArea.value = textToCopy
+      textArea.style.cssText = 'position:fixed;left:-9999px;top:-9999px;opacity:0'
+      document.body.appendChild(textArea)
+      textArea.focus()
+      textArea.select()
+      document.execCommand('copy')
+      document.body.removeChild(textArea)
+    }
+    isCopied.value = true
+    uiStore.showNotification('success', 'ID Disalin!', 'ID Tiket berhasil disalin ke clipboard.')
+    setTimeout(() => { isCopied.value = false }, 2500)
   } catch (error) {
-    uiStore.showNotification('info', 'Catat ID Tiket', `ID Tiket Anda: ${visibleTicketId.value}`)
+    uiStore.showNotification('info', 'Catat ID Tiket', `ID Tiket Anda: ${textToCopy}`)
   }
 }
 
@@ -232,6 +443,8 @@ const validateAndSubmit = () => {
   if (!newLaporan.value.kategoriKonflik) errors.value.kategoriKonflik = 'Pilih kategori konflik.'
   if (!newLaporan.value.prioritas) errors.value.prioritas = 'Pilih prioritas laporan.'
   if (!newLaporan.value.kabupatenKota) errors.value.kabupatenKota = 'Pilih kabupaten/kota.'
+  if (!newLaporan.value.kecamatan) errors.value.kecamatan = 'Pilih kecamatan.'
+  if (!newLaporan.value.kelurahan) errors.value.kelurahan = 'Pilih kelurahan/desa.'
   if (!newLaporan.value.lokasi.trim()) errors.value.lokasi = 'Detail lokasi tidak boleh kosong.'
 
   if (selectedFiles.value.length === 0)
@@ -381,7 +594,7 @@ const submitLaporan = async () => {
           @click="copyTicketId"
           class="bg-gray-100 text-gray-700 font-semibold py-3 px-6 rounded-md hover:bg-gray-200 transition-colors"
         >
-          Salin ID Tiket
+          {{ isCopied ? '✓ Tersalin!' : 'Salin ID Tiket' }}
         </button>
         <button
           @click="router.push({ name: 'Home' })"
@@ -426,7 +639,7 @@ const submitLaporan = async () => {
           @click="copyTicketId"
           class="bg-stone-100 text-stone-700 font-semibold py-2.5 px-6 rounded-lg hover:bg-stone-200 transition-colors text-sm"
         >
-          Salin ID Tiket
+          {{ isCopied ? '✓ Tersalin!' : 'Salin ID Tiket' }}
         </button>
       </div>
     </div>
@@ -634,6 +847,49 @@ const submitLaporan = async () => {
                   <p v-if="errors.kabupatenKota" class="text-red-600 text-xs font-semibold mt-1">{{ errors.kabupatenKota }}</p>
                 </div>
 
+                <!-- Dropdown Kecamatan (cascade dari Kabupaten/Kota) -->
+                <div>
+                  <label for="kecamatan" class="block text-sm font-semibold text-gray-700 mb-1"
+                    >Kecamatan</label
+                  >
+                  <select
+                    v-model="newLaporan.kecamatan"
+                    id="kecamatan"
+                    :disabled="!newLaporan.kabupatenKota"
+                    class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-forest-300 focus:border-forest-500 bg-white transition-all outline-none disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
+                    :class="{ 'border-red-500 focus:ring-red-200 focus:border-red-500': errors.kecamatan }"
+                  >
+                    <option disabled value="">
+                      {{ newLaporan.kabupatenKota ? 'Pilih kecamatan' : 'Pilih kabupaten/kota dahulu' }}
+                    </option>
+                    <option v-for="kec in availableKecamatan" :key="`kec-${kec}`" :value="kec">{{ kec }}</option>
+                  </select>
+                  <p v-if="errors.kecamatan" class="text-red-600 text-xs font-semibold mt-1">{{ errors.kecamatan }}</p>
+                </div>
+
+                <!-- Dropdown Kelurahan/Desa (cascade dari Kecamatan) -->
+                <div>
+                  <label for="kelurahan" class="block text-sm font-semibold text-gray-700 mb-1"
+                    >Kelurahan / Desa</label
+                  >
+                  <select
+                    v-model="newLaporan.kelurahan"
+                    id="kelurahan"
+                    :disabled="!newLaporan.kecamatan || availableKelurahan.length === 0"
+                    class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-forest-300 focus:border-forest-500 bg-white transition-all outline-none disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
+                    :class="{ 'border-red-500 focus:ring-red-200 focus:border-red-500': errors.kelurahan }"
+                  >
+                    <option disabled value="">
+                      {{ !newLaporan.kecamatan ? 'Pilih kecamatan dahulu' : (availableKelurahan.length === 0 ? 'Ketik lokasi di kolom bawah' : 'Pilih kelurahan/desa') }}
+                    </option>
+                    <option v-for="kel in availableKelurahan" :key="`kel-${kel}`" :value="kel">{{ kel }}</option>
+                  </select>
+                  <p class="text-gray-400 text-xs mt-1" v-if="newLaporan.kecamatan && availableKelurahan.length === 0">
+                    Data kelurahan/desa untuk kecamatan ini belum tersedia. Tuliskan di kolom Detail Lokasi.
+                  </p>
+                  <p v-if="errors.kelurahan" class="text-red-600 text-xs font-semibold mt-1">{{ errors.kelurahan }}</p>
+                </div>
+
                 <div>
                   <label for="lokasi" class="block text-sm font-semibold text-gray-700 mb-1"
                     >Detail Alamat / Lokasi Kejadian</label
@@ -770,7 +1026,7 @@ const submitLaporan = async () => {
               :disabled="isSubmitting"
               class="w-full sm:w-auto bg-forest-600 text-white font-bold py-3 px-10 rounded-lg hover:bg-forest-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm uppercase tracking-wide"
             >
-              {{ isSubmitting ? 'Sedang Mengirim...' : 'Kirim Laporan Resmi' }}
+              {{ isSubmitting ? 'Sedang Mengirim...' : 'Kirim Laporan' }}
             </button>
           </div>
         </form>

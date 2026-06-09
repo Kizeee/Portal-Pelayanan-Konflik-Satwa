@@ -20,6 +20,15 @@ const containerRef = ref(null)
 let map = null
 let markers = null // initialized in setupMap
 let heatLayer = null
+const boundaryStyle = {
+  color: '#ef5b3f',
+  weight: 3,
+  opacity: 0.95,
+  fillOpacity: 0,
+  dashArray: '1, 8',
+  lineCap: 'round',
+  lineJoin: 'round',
+}
 
 // ── Warna marker per status ──
 const statusColor = {
@@ -36,6 +45,15 @@ const statusColor = {
 
 function getColor(status) {
   return statusColor[status] || '#6B7280'
+}
+
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;')
 }
 
 // Custom SVG pin marker berwarna
@@ -58,6 +76,14 @@ function createColorMarker(color) {
 // Popup HTML yang informatif dan rapi
 function buildPopupHtml(report) {
   const color = getColor(report.status)
+  const jenisSatwa = escapeHtml(report.jenisSatwa || 'Satwa Tidak Diketahui')
+  const lokasi = escapeHtml(report.lokasi || '-')
+  const kategoriKonflik = escapeHtml(report.kategoriKonflik || '-')
+  const status = escapeHtml(report.status || '-')
+  const idLaporan = escapeHtml(report.idLaporan || '')
+  const kabupatenKota = escapeHtml(report.kabupatenKota || '-')
+  const kecamatan = escapeHtml(report.kecamatan || '-')
+  const kelurahan = escapeHtml(report.kelurahan || '-')
   let dateStr = '-'
   if (report.createdAt) {
     const raw = report.createdAt instanceof Date
@@ -70,34 +96,46 @@ function buildPopupHtml(report) {
     <div style="font-family:system-ui,sans-serif;min-width:210px;padding:2px;">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
         <div style="width:10px;height:10px;border-radius:50%;background:${color};flex-shrink:0;"></div>
-        <strong style="font-size:14px;color:#1f2937;">${report.jenisSatwa || 'Satwa Tidak Diketahui'}</strong>
+        <strong style="font-size:14px;color:#1f2937;">${jenisSatwa}</strong>
       </div>
       <table style="width:100%;font-size:12px;border-collapse:collapse;">
         <tr>
-          <td style="color:#9ca3af;padding:3px 0;vertical-align:top;width:70px;">📍 Lokasi</td>
-          <td style="color:#374151;font-weight:500;padding:3px 0;">${report.lokasi || '-'}</td>
+          <td style="color:#9ca3af;padding:3px 0;vertical-align:top;width:86px;">Wilayah</td>
+          <td style="color:#374151;font-weight:600;padding:3px 0;">${kabupatenKota}</td>
         </tr>
         <tr>
-          <td style="color:#9ca3af;padding:3px 0;vertical-align:top;">🐾 Kategori</td>
-          <td style="color:#374151;padding:3px 0;">${report.kategoriKonflik || '-'}</td>
+          <td style="color:#9ca3af;padding:3px 0;vertical-align:top;">Kecamatan</td>
+          <td style="color:#374151;padding:3px 0;">${kecamatan}</td>
         </tr>
         <tr>
-          <td style="color:#9ca3af;padding:3px 0;vertical-align:top;">📅 Tanggal</td>
+          <td style="color:#9ca3af;padding:3px 0;vertical-align:top;">Kel/Desa</td>
+          <td style="color:#374151;padding:3px 0;">${kelurahan}</td>
+        </tr>
+        <tr>
+          <td style="color:#9ca3af;padding:3px 0;vertical-align:top;">Lokasi</td>
+          <td style="color:#374151;font-weight:500;padding:3px 0;">${lokasi}</td>
+        </tr>
+        <tr>
+          <td style="color:#9ca3af;padding:3px 0;vertical-align:top;">Kategori</td>
+          <td style="color:#374151;padding:3px 0;">${kategoriKonflik}</td>
+        </tr>
+        <tr>
+          <td style="color:#9ca3af;padding:3px 0;vertical-align:top;">Tanggal</td>
           <td style="color:#374151;padding:3px 0;">${dateStr}</td>
         </tr>
         <tr>
-          <td style="color:#9ca3af;padding:3px 0;vertical-align:top;">🔖 Status</td>
+          <td style="color:#9ca3af;padding:3px 0;vertical-align:top;">Status</td>
           <td style="padding:3px 0;">
             <span style="background:${color}22;color:${color};border:1px solid ${color}66;
               padding:1px 8px;border-radius:999px;font-weight:700;font-size:11px;">
-              ${report.status}
+              ${status}
             </span>
           </td>
         </tr>
       </table>
       ${report.idLaporan
         ? `<div style="margin-top:8px;font-size:10px;color:#d1d5db;border-top:1px solid #f3f4f6;padding-top:6px;">
-            ID: ${report.idLaporan}
+            ID: ${idLaporan}
           </div>`
         : ''}
     </div>`
@@ -122,14 +160,8 @@ const setupMap = () => {
 
   // Batas wilayah Riau
   L.geoJSON(riauBoundary, {
-    style: {
-      color: '#0e7a3a',
-      weight: 2.5,
-      opacity: 0.9,
-      fillColor: '#16a34a',
-      fillOpacity: 0.06,
-      dashArray: '8, 4',
-    },
+    style: boundaryStyle,
+    interactive: false,
   }).addTo(map)
 
   // Initialize marker cluster group

@@ -297,85 +297,12 @@ const dashboardInsights = computed(() => {
   return insights
 })
 
-const statsPenanganan = computed(() => {
-  const completedReports = reportsByMonth.value.filter(isCompletedReport)
-  
-  let totalMs = 0
-  let minMs = Infinity
-  let maxMs = 0
-  let countCompleted = 0
-
-  completedReports.forEach(r => {
-    const started = r.createdAt?.toDate ? r.createdAt.toDate() : new Date(r.createdAt)
-    if (isNaN(started)) return
-
-    let completedDate = null
-    
-    // Check statusHistory first
-    if (r.statusHistory && Array.isArray(r.statusHistory)) {
-      const historyItems = [...r.statusHistory].reverse()
-      const finishEvent = historyItems.find(h => h.status === 'Selesai')
-      if (finishEvent && finishEvent.timestamp) {
-        completedDate = finishEvent.timestamp.toDate ? finishEvent.timestamp.toDate() : new Date(finishEvent.timestamp)
-      }
-    }
-    
-    // Fallback if not found in history
-    if (!completedDate && r.updatedAt) {
-       completedDate = r.updatedAt.toDate ? r.updatedAt.toDate() : new Date(r.updatedAt)
-    }
-
-    if (completedDate && !isNaN(completedDate)) {
-      const diffMs = completedDate.getTime() - started.getTime()
-      if (diffMs > 0) {
-        totalMs += diffMs
-        if (diffMs < minMs) minMs = diffMs
-        if (diffMs > maxMs) maxMs = diffMs
-        countCompleted++
-      }
-    }
-  })
-
-  const formatTime = (ms) => {
-    if (!isFinite(ms)) return '-'
-    
-    const totalMinutes = Math.floor(ms / (1000 * 60))
-    const days = Math.floor(totalMinutes / (24 * 60))
-    const hours = Math.floor((totalMinutes % (24 * 60)) / 60)
-    const minutes = totalMinutes % 60
-
-    if (days === 0 && hours === 0 && minutes === 0) return '< 1 menit'
-    if (days === 0 && hours === 0) return `${minutes} mnt`
-    if (days === 0) return `${hours} jam ${minutes > 0 ? minutes + ' mnt' : ''}`.trim()
-    return `${days} hari ${hours > 0 ? hours + ' jam' : ''}`.trim()
-  }
-
-  const avgMs = countCompleted > 0 ? totalMs / countCompleted : 0
-
-  // Belum selesai lebih dari 3 hari
-  const now = new Date().getTime()
-  const unresolvedOver3Days = reportsByMonth.value.filter(r => {
-    if (isCompletedReport(r) || isRejectedReport(r)) return false
-    const started = r.createdAt?.toDate ? r.createdAt.toDate() : new Date(r.createdAt)
-    if (isNaN(started)) return false
-    const diffDays = (now - started.getTime()) / (1000 * 60 * 60 * 24)
-    return diffDays > 3
-  }).length
-
-  return {
-    hasData: countCompleted > 0,
-    avg: formatTime(avgMs),
-    min: formatTime(minMs),
-    max: formatTime(maxMs),
-    unresolved3Days: unresolvedOver3Days
-  }
-})
 </script>
 
 <template>
-  <div>
+  <div class="space-y-6">
     <!-- HEADER -->
-    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-3">
+    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 bg-white border border-stone-200 rounded-lg shadow-sm p-5">
       <div>
         <h2 class="text-2xl sm:text-3xl font-bold text-stone-800">Statistik</h2>
         <p class="text-stone-500 text-sm mt-0.5">Ringkasan data laporan konflik satwa</p>
@@ -390,52 +317,54 @@ const statsPenanganan = computed(() => {
 
         <button
           @click="router.push({ name: 'RekapBulanan' })"
-          class="w-full xs:w-auto bg-forest-600 text-white font-semibold py-2 px-4 sm:px-5 rounded-lg hover:bg-forest-700 transition-colors text-sm"
+          class="w-full xs:w-auto inline-flex items-center justify-center gap-2 bg-forest-600 text-white font-semibold py-2 px-4 sm:px-5 rounded-lg hover:bg-forest-700 transition-colors text-sm"
         >
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/>
+          </svg>
           Buat Rekap Bulanan
         </button>
       </div>
     </div>
 
     <!-- STAT CARD -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5 mb-8">
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
       <StatCard
-        title="Total Masuk"
+        title="Laporan Masuk"
         :value="totalLaporan"
         gradient="stat-gradient-green"
-        iconPath="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+        iconPath="M4 5h16v10h-4l-2 3h-4l-2-3H4V5ZM4 15v4h16v-4"
       />
       <StatCard
         title="Menunggu Verifikasi"
         :value="laporanPending"
         gradient="stat-gradient-yellow"
-        iconPath="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+        iconPath="M9 4h6M9 4a2 2 0 0 0-2 2v1h10V6a2 2 0 0 0-2-2M6 7h12v13H6V7ZM9 12h3M9 16h2M15 13v2l1.5 1"
       />
       <StatCard
         title="Laporan Valid"
         :value="laporanValid"
         gradient="stat-gradient-teal"
-        iconPath="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+        iconPath="M12 3 19 6v5c0 4.5-2.8 8-7 10-4.2-2-7-5.5-7-10V6l7-3ZM9 12l2 2 4-4"
       />
       <StatCard
         title="Selesai"
         :value="laporanSelesai"
         gradient="stat-gradient-blue"
-        iconPath="M5 13l4 4L19 7"
+        iconPath="M5 5h14v14H5V5ZM8 12l3 3 5-6"
       />
       <StatCard
         title="Ditolak/Tidak Valid"
         :value="laporanDitolak"
         gradient="stat-gradient-red"
-        iconPath="M6 18L18 6M6 6l12 12"
+        iconPath="M7 3h10l4 4v10l-4 4H7l-4-4V7l4-4ZM9 9l6 6M15 9l-6 6"
       />
     </div>
 
     <!-- INSIGHT OTOMATIS -->
-    <div class="bg-white border border-stone-200 p-5 sm:p-6 rounded-lg shadow-sm mb-8">
+    <div class="bg-white border border-stone-200 p-5 sm:p-6 rounded-lg shadow-sm">
       <div class="flex items-center gap-3 mb-4">
-        <div class="bg-forest-50 text-forest-700 p-2 rounded-md border border-forest-200">
-          <!-- Bar chart icon — practical, not AI -->
+        <div class="bg-slate-50 text-slate-700 p-2 rounded-md border border-slate-200">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
             <rect x="3" y="12" width="4" height="9"/>
             <rect x="10" y="7" width="4" height="14"/>
@@ -450,7 +379,7 @@ const statsPenanganan = computed(() => {
       </div>
       <ul v-else class="space-y-2.5">
         <li v-for="(insight, index) in dashboardInsights" :key="index" class="flex items-start gap-2 text-stone-700 text-sm">
-          <svg class="h-4 w-4 text-forest-600 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <svg class="h-4 w-4 text-slate-700 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <span v-html="insight" class="leading-relaxed"></span>
@@ -460,65 +389,37 @@ const statsPenanganan = computed(() => {
 
     <!-- GRAFIK UTAMA -->
     <div class="grid grid-cols-1 lg:grid-cols-6 gap-6">
-      <div class="lg:col-span-4 bg-white p-6 rounded-lg border border-stone-200 shadow-sm">
-        <h3 class="font-semibold text-base text-stone-700 mb-4">Laporan Valid per Jenis Satwa</h3>
+      <div class="lg:col-span-4 bg-white p-5 sm:p-6 rounded-lg border border-stone-200 shadow-sm self-start min-w-0">
+        <div class="flex items-start justify-between gap-4 mb-4">
+          <div>
+            <h3 class="font-semibold text-base text-stone-800">Laporan Valid per Jenis Satwa</h3>
+            <p class="text-xs text-stone-500 mt-1">Berdasarkan laporan yang sudah diterima, diproses, atau selesai</p>
+          </div>
+        </div>
         <BarChart :chart-data="laporanPerSatwa" />
       </div>
 
       <div class="lg:col-span-2 flex flex-col gap-6">
-        <div class="bg-white p-6 rounded-lg border border-stone-200 shadow-sm flex-1">
-          <h3 class="font-semibold text-base text-stone-700 mb-4">Proporsi Status Laporan</h3>
+        <div class="bg-white p-5 sm:p-6 rounded-lg border border-stone-200 shadow-sm flex-1 min-w-0">
+          <h3 class="font-semibold text-base text-stone-800 mb-4">Proporsi Status Laporan</h3>
           <DoughnutChart :chart-data="laporanPerStatus" />
         </div>
-        <div class="bg-white p-6 rounded-lg border border-stone-200 shadow-sm flex-1">
-          <h3 class="font-semibold text-base text-stone-700 mb-4">Proporsi Prioritas Laporan</h3>
+        <div class="bg-white p-5 sm:p-6 rounded-lg border border-stone-200 shadow-sm flex-1 min-w-0">
+          <h3 class="font-semibold text-base text-stone-800 mb-4">Proporsi Prioritas Laporan</h3>
           <DoughnutChart :chart-data="laporanPerPrioritas" />
         </div>
       </div>
     </div>
 
     <!-- POLA WAKTU -->
-    <div class="bg-white p-6 rounded-lg border border-stone-200 shadow-sm mt-6">
-      <h3 class="font-semibold text-base text-stone-700 mb-4">Pola Laporan Valid Berdasarkan Minggu</h3>
+    <div class="bg-white p-5 sm:p-6 rounded-lg border border-stone-200 shadow-sm min-w-0">
+      <h3 class="font-semibold text-base text-stone-800 mb-4">Pola Laporan Valid Berdasarkan Minggu</h3>
       <BarChart :chart-data="laporanPerMinggu" />
     </div>
 
-    <!-- STATISTIK WAKTU PENANGANAN -->
-    <div class="bg-white p-6 rounded-lg border border-stone-200 shadow-sm mt-6">
-      <h3 class="font-semibold text-base text-stone-700 mb-4 flex items-center gap-2">
-        <!-- Clock icon -->
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-forest-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-        </svg>
-        Kecepatan Penanganan Laporan
-      </h3>
-      
-      <div v-if="!statsPenanganan.hasData" class="text-stone-400 italic text-sm">
-        Belum cukup data untuk menghitung rata-rata waktu penanganan pada periode ini.
-      </div>
-      <div v-else class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-        <div class="bg-sky-50 border border-sky-100 p-4 rounded-lg">
-          <p class="text-xs text-sky-700 font-semibold uppercase tracking-wider mb-1">Rata-rata Penyelesaian</p>
-          <p class="text-xl font-bold text-sky-900">{{ statsPenanganan.avg }}</p>
-        </div>
-        <div class="bg-forest-50 border border-forest-100 p-4 rounded-lg">
-          <p class="text-xs text-forest-700 font-semibold uppercase tracking-wider mb-1">Tercepat Selesai</p>
-          <p class="text-xl font-bold text-forest-900">{{ statsPenanganan.min }}</p>
-        </div>
-        <div class="bg-amber-50 border border-amber-100 p-4 rounded-lg">
-          <p class="text-xs text-amber-700 font-semibold uppercase tracking-wider mb-1">Paling Lama Selesai</p>
-          <p class="text-xl font-bold text-amber-900">{{ statsPenanganan.max }}</p>
-        </div>
-        <div class="bg-rose-50 border border-rose-100 p-4 rounded-lg">
-          <p class="text-xs text-rose-700 font-semibold uppercase tracking-wider mb-1">Belum Selesai &gt; 3 Hari</p>
-          <p class="text-xl font-bold text-rose-900">{{ statsPenanganan.unresolved3Days }} Laporan</p>
-        </div>
-      </div>
-    </div>
-
     <!-- STATISTIK LOKASI -->
-    <div class="bg-white p-6 rounded-lg border border-stone-200 shadow-sm mt-6">
-      <h3 class="font-semibold text-base text-stone-700 mb-4">Laporan Valid Berdasarkan Lokasi</h3>
+    <div class="bg-white p-5 sm:p-6 rounded-lg border border-stone-200 shadow-sm min-w-0">
+      <h3 class="font-semibold text-base text-stone-800 mb-4">Laporan Valid Berdasarkan Lokasi</h3>
       <BarChart :chart-data="laporanPerLokasi" />
     </div>
   </div>

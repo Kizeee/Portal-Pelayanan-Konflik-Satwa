@@ -25,6 +25,11 @@ const navigateAndClose = (routeName) => {
 }
 
 const openSafetyModal = () => {
+  if (route.name === 'Lapor') {
+    mobileMenuOpen.value = false
+    return
+  }
+
   showSafetyModal.value = true
   mobileMenuOpen.value = false
 }
