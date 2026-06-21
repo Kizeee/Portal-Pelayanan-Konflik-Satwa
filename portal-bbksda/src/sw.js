@@ -4,6 +4,7 @@ import { clientsClaim } from 'workbox-core'
 import { registerRoute } from 'workbox-routing'
 import { StaleWhileRevalidate, NetworkFirst, CacheFirst } from 'workbox-strategies'
 import { ExpirationPlugin } from 'workbox-expiration'
+import { createTicketId, isValidTicketId } from './utils/ticketId'
 
 // Aktifkan SW segera
 self.skipWaiting()
@@ -58,25 +59,12 @@ const removePending = async (id) => {
 }
 
 // ====== Helper Upload & Firestore ======
-const getTicketPeriod = (date = new Date()) => {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  return `${year}${month}`
-}
-
-const createTicketSuffix = () => {
-  const bytes = new Uint8Array(4)
-  crypto.getRandomValues(bytes)
-  return Array.from(bytes, (byte) => (byte % 36).toString(36).toUpperCase()).join('')
-}
-
-const formatTicketId = (period) => {
-  return `BKSDA-${period}-${createTicketSuffix()}`
-}
-
 const generateNewReportId = async () => {
-  const period = getTicketPeriod()
-  return formatTicketId(period)
+  const ticketId = createTicketId()
+  if (!isValidTicketId(ticketId)) {
+    throw new Error(`Generated invalid ticket ID: ${ticketId}`)
+  }
+  return ticketId
 }
 
 const uploadQueuedFiles = async (files = []) => {

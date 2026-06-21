@@ -11,7 +11,7 @@ const emit = defineEmits(['close']);
 
 <template>
   <transition name="fade">
-    <div v-if="show" class="fixed inset-0 bg-gray-900 bg-opacity-80 backdrop-blur-md flex items-center justify-center z-[2000]">
+    <div v-if="show" class="fixed inset-0 bg-gray-900 bg-opacity-80 backdrop-blur-md flex items-center justify-center z-[20000]">
       <div class="bg-white rounded-lg shadow-xl p-8 max-w-sm mx-auto text-center">
         <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full mb-4" :class="type === 'success' ? 'bg-green-100' : 'bg-red-100'">
           <svg v-if="type === 'success'" class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>

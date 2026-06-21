@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useReportsStore } from '../stores/reports'
 import { useReporterNotificationsStore } from '../stores/reporterNotifications'
+import { normalizeTicketId } from '../utils/ticketId'
 
 const route = useRoute()
 const router = useRouter()
@@ -19,8 +20,6 @@ const foundReport = computed(() => {
   if (!foundReportId.value) return null
   return reportsStore.reports.find((report) => report.id === foundReportId.value) || null
 })
-
-const normalizeTicketId = (value) => String(value || '').trim().toUpperCase()
 
 const formatDate = (value) => {
   if (!value) return '-'

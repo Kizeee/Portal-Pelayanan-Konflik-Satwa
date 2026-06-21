@@ -10,6 +10,7 @@ import {
   limit,
   where,
 } from 'firebase/firestore'
+import { createTicketId, isValidTicketId, normalizeTicketId } from '../utils/ticketId'
 
 /**
  * Composable for reports/laporan CRUD operations
@@ -18,24 +19,16 @@ import {
 export function useReports() {
   const COLLECTION_NAME = 'laporan'
 
-  const getTicketPeriod = (date = new Date()) => {
-    const year = date.getFullYear()
-    const month = String(date.getMonth() + 1).padStart(2, '0')
-    return `${year}${month}`
-  }
+  const getTicketLookupCandidates = (ticketId) => {
+    const trimmedTicketId = String(ticketId || '').trim()
+    const normalizedTicketId = normalizeTicketId(trimmedTicketId)
+    const candidates = [trimmedTicketId, normalizedTicketId]
 
-  const createTicketSuffix = () => {
-    const bytes = new Uint8Array(4)
-    crypto.getRandomValues(bytes)
-    return Array.from(bytes, (byte) => (byte % 36).toString(36).toUpperCase()).join('')
-  }
+    if (normalizedTicketId === 'LPNAN') {
+      candidates.push('LPNaN')
+    }
 
-  const formatTicketId = (period) => {
-    return `BKSDA-${period}-${createTicketSuffix()}`
-  }
-
-  const normalizeTicketId = (ticketId) => {
-    return String(ticketId || '').trim().toUpperCase()
+    return [...new Set(candidates.filter(Boolean))]
   }
 
   /**
@@ -89,23 +82,26 @@ export function useReports() {
    * for legacy documents whose document ID may differ from the ticket.
    */
   const getReportByTicketId = async (ticketId) => {
-    const normalizedTicketId = normalizeTicketId(ticketId)
-    if (!normalizedTicketId) return null
+    const ticketCandidates = getTicketLookupCandidates(ticketId)
+    if (!ticketCandidates.length) return null
 
-    const directReport = await getReportById(normalizedTicketId)
-    if (directReport) return directReport
+    for (const candidate of ticketCandidates) {
+      const directReport = await getReportById(candidate)
+      if (directReport) return directReport
+    }
 
     try {
-      const q = query(
-        collection(db, COLLECTION_NAME),
-        where('idLaporan', '==', normalizedTicketId),
-        limit(1),
-      )
-      const querySnapshot = await getDocs(q)
+      for (const candidate of ticketCandidates) {
+        const q = query(collection(db, COLLECTION_NAME), where('idLaporan', '==', candidate), limit(1))
+        const querySnapshot = await getDocs(q)
 
-      if (querySnapshot.empty) return null
-      const reportDoc = querySnapshot.docs[0]
-      return { id: reportDoc.id, ...reportDoc.data() }
+        if (!querySnapshot.empty) {
+          const reportDoc = querySnapshot.docs[0]
+          return { id: reportDoc.id, ...reportDoc.data() }
+        }
+      }
+
+      return null
     } catch (error) {
       console.error('Error fetching report by ticket ID:', error)
       throw error
@@ -117,8 +113,11 @@ export function useReports() {
    * @returns {Promise<string>} New report ID (e.g., BKSDA-202606-A7K2)
    */
   const generateNewReportId = async () => {
-    const period = getTicketPeriod()
-    return formatTicketId(period)
+    const ticketId = createTicketId()
+    if (!isValidTicketId(ticketId)) {
+      throw new Error(`Generated invalid ticket ID: ${ticketId}`)
+    }
+    return ticketId
   }
 
   /**

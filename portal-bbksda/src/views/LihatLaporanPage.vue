@@ -99,6 +99,45 @@ const reportSummary = computed(() => {
   }
 })
 
+const summaryCards = computed(() => [
+  {
+    label: 'Menunggu',
+    value: reportSummary.value.pending,
+    helper: 'Butuh verifikasi',
+    iconPath: 'M9 4h6M9 4a2 2 0 0 0-2 2v1h10V6a2 2 0 0 0-2-2M6 7h12v13H6V7ZM9 12h3M9 16h2M15 13v2l1.5 1',
+  },
+  {
+    label: 'Diterima',
+    value: reportSummary.value.accepted,
+    helper: 'Laporan valid',
+    iconPath: 'M12 3 19 6v5c0 4.5-2.8 8-7 10-4.2-2-7-5.5-7-10V6l7-3ZM9 12l2 2 4-4',
+  },
+  {
+    label: 'Proses',
+    value: reportSummary.value.process,
+    helper: 'Dalam penanganan',
+    iconPath: 'M4 13h5l2-8 2 14 2-6h5M4 19h16',
+  },
+  {
+    label: 'Selesai',
+    value: reportSummary.value.completed,
+    helper: 'Sudah ditutup',
+    iconPath: 'M5 5h14v14H5V5ZM8 12l3 3 5-6',
+  },
+  {
+    label: 'Tidak Valid',
+    value: reportSummary.value.rejected,
+    helper: 'Ditolak admin',
+    iconPath: 'M7 3h10l4 4v10l-4 4H7l-4-4V7l4-4ZM9 9l6 6M15 9l-6 6',
+  },
+  {
+    label: 'Mencurigakan',
+    value: reportSummary.value.suspicious,
+    helper: 'Nomor berulang',
+    iconPath: 'M12 9v3m0 4h.01M10.3 4.7 2.9 17.5A2 2 0 0 0 4.6 20h14.8a2 2 0 0 0 1.7-2.5L13.7 4.7a2 2 0 0 0-3.4 0Z',
+  },
+])
+
 // View mode
 const viewMode = ref('grid') // grid | list
 
@@ -408,229 +447,265 @@ const prioritasClass = (p) => {
 </script>
 
 <template>
-  <div>
+  <div class="space-y-6">
     <!-- Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-3">
-      <div>
-        <h2 class="text-2xl sm:text-3xl font-bold text-stone-800 mb-1">Kelola Laporan</h2>
-        <p class="text-stone-500 text-sm">
-          Menampilkan
-          <span class="font-semibold text-forest-700">{{ visibleReports.length }}</span>
-          dari {{ reportsStore.reports.length }} laporan
-        </p>
-      </div>
+    <div class="bg-white border border-stone-200 rounded-lg shadow-sm p-5 sm:p-6">
+      <div class="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+        <div class="flex items-start gap-4">
+          <div class="hidden sm:flex h-12 w-12 items-center justify-center rounded-lg border border-stone-200 bg-stone-50 text-stone-700">
+            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 4h14v16H5V4ZM8 8h8M8 12h8M8 16h5" />
+            </svg>
+          </div>
+          <div>
+            <h2 class="text-2xl sm:text-3xl font-bold text-stone-800">Kelola Laporan</h2>
+            <p class="mt-1 text-sm text-stone-500">
+              Menampilkan
+              <span class="font-semibold text-stone-800">{{ visibleReports.length }}</span>
+              dari {{ reportsStore.reports.length }} laporan
+            </p>
+            <div class="mt-3 flex flex-wrap items-center gap-2 text-xs text-stone-500">
+              <span class="inline-flex items-center gap-1.5 rounded-md border border-stone-200 bg-stone-50 px-2.5 py-1">
+                <span class="h-1.5 w-1.5 rounded-full bg-stone-500"></span>
+                {{ displayedReports.length }} tampil di halaman ini
+              </span>
+              <span
+                v-if="reportsStore.hasActiveFilters || showOnlySuspicious"
+                class="inline-flex items-center gap-1.5 rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1 text-amber-800"
+              >
+                Filter aktif
+              </span>
+            </div>
+          </div>
+        </div>
 
-      <!-- View Mode Toggle (Desktop) -->
-      <div class="hidden sm:flex items-center gap-1 border border-stone-200 rounded-lg p-1 bg-stone-50">
-        <button
-          @click="viewMode = 'grid'"
-          :class="viewMode === 'grid' ? 'bg-white text-forest-700 shadow-sm' : 'text-stone-500 hover:text-stone-700'"
-          class="px-3 py-1.5 rounded-md transition-all text-sm"
-          title="Tampilan Grid"
-        >
-          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <rect x="3" y="3" width="7" height="7"/>
-            <rect x="14" y="3" width="7" height="7"/>
-            <rect x="3" y="14" width="7" height="7"/>
-            <rect x="14" y="14" width="7" height="7"/>
-          </svg>
-        </button>
-        <button
-          @click="viewMode = 'list'"
-          :class="viewMode === 'list' ? 'bg-white text-forest-700 shadow-sm' : 'text-stone-500 hover:text-stone-700'"
-          class="px-3 py-1.5 rounded-md transition-all text-sm"
-          title="Tampilan Daftar"
-        >
-          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <line x1="8" y1="6" x2="21" y2="6"/>
-            <line x1="8" y1="12" x2="21" y2="12"/>
-            <line x1="8" y1="18" x2="21" y2="18"/>
-            <line x1="3" y1="6" x2="3.01" y2="6"/>
-            <line x1="3" y1="12" x2="3.01" y2="12"/>
-            <line x1="3" y1="18" x2="3.01" y2="18"/>
-          </svg>
-        </button>
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center lg:justify-end">
+          <button
+            @click="exportCSV"
+            class="inline-flex items-center justify-center gap-2 rounded-lg border border-stone-300 bg-white px-4 py-2.5 text-sm font-semibold text-stone-700 transition-colors hover:border-stone-500 hover:bg-stone-50"
+            title="Export data ke CSV"
+          >
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v10m0 0 3-3m-3 3-3-3M5 20h14" />
+            </svg>
+            Export CSV
+          </button>
+
+          <!-- View Mode Toggle -->
+          <div class="flex items-center gap-1 rounded-lg border border-stone-200 bg-stone-50 p-1">
+            <button
+              @click="viewMode = 'grid'"
+              :class="viewMode === 'grid' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-500 hover:text-stone-800'"
+              class="inline-flex h-9 w-10 items-center justify-center rounded-md transition-all"
+              title="Tampilan Grid"
+            >
+              <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <rect x="3" y="3" width="7" height="7"/>
+                <rect x="14" y="3" width="7" height="7"/>
+                <rect x="3" y="14" width="7" height="7"/>
+                <rect x="14" y="14" width="7" height="7"/>
+              </svg>
+            </button>
+            <button
+              @click="viewMode = 'list'"
+              :class="viewMode === 'list' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-500 hover:text-stone-800'"
+              class="inline-flex h-9 w-10 items-center justify-center rounded-md transition-all"
+              title="Tampilan Daftar"
+            >
+              <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <line x1="8" y1="6" x2="21" y2="6"/>
+                <line x1="8" y1="12" x2="21" y2="12"/>
+                <line x1="8" y1="18" x2="21" y2="18"/>
+                <line x1="3" y1="6" x2="3.01" y2="6"/>
+                <line x1="3" y1="12" x2="3.01" y2="12"/>
+                <line x1="3" y1="18" x2="3.01" y2="18"/>
+              </svg>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
     <!-- Ringkasan Status -->
-    <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 mb-6">
-      <div class="bg-white border border-stone-200 rounded-lg p-3.5">
-        <p class="text-xs font-semibold text-stone-500 uppercase tracking-wide">Menunggu</p>
-        <p class="mt-1 text-xl font-bold text-amber-700">{{ reportSummary.pending }}</p>
-      </div>
-      <div class="bg-white border border-stone-200 rounded-lg p-3.5">
-        <p class="text-xs font-semibold text-stone-500 uppercase tracking-wide">Diterima</p>
-        <p class="mt-1 text-xl font-bold text-sky-700">{{ reportSummary.accepted }}</p>
-      </div>
-      <div class="bg-white border border-stone-200 rounded-lg p-3.5">
-        <p class="text-xs font-semibold text-stone-500 uppercase tracking-wide">Proses</p>
-        <p class="mt-1 text-xl font-bold text-indigo-600">{{ reportSummary.process }}</p>
-      </div>
-      <div class="bg-white border border-stone-200 rounded-lg p-3.5">
-        <p class="text-xs font-semibold text-stone-500 uppercase tracking-wide">Selesai</p>
-        <p class="mt-1 text-xl font-bold text-forest-700">{{ reportSummary.completed }}</p>
-      </div>
-      <div class="bg-white border border-stone-200 rounded-lg p-3.5">
-        <p class="text-xs font-semibold text-stone-500 uppercase tracking-wide">Tidak Valid</p>
-        <p class="mt-1 text-xl font-bold text-rose-700">{{ reportSummary.rejected }}</p>
-      </div>
-      <div class="bg-white border border-stone-200 rounded-lg p-3.5">
-        <p class="text-xs font-semibold text-stone-500 uppercase tracking-wide">Mencurigakan</p>
-        <p class="mt-1 text-xl font-bold text-stone-700">{{ reportSummary.suspicious }}</p>
+    <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
+      <div
+        v-for="card in summaryCards"
+        :key="card.label"
+        class="group rounded-lg border border-stone-200 bg-white p-4 shadow-sm transition-colors hover:border-stone-300"
+      >
+        <div class="flex items-start justify-between gap-3">
+          <div class="min-w-0">
+            <p class="truncate text-xs font-semibold uppercase tracking-wide text-stone-500">{{ card.label }}</p>
+            <p class="mt-1 text-2xl font-extrabold leading-none text-stone-900">{{ card.value }}</p>
+          </div>
+          <div class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg border border-stone-200 bg-stone-50 text-stone-700">
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" :d="card.iconPath" />
+            </svg>
+          </div>
+        </div>
+        <p class="mt-3 truncate text-xs text-stone-500">{{ card.helper }}</p>
       </div>
     </div>
 
     <!-- Filter Panel -->
-    <UiCard class="mb-6" variant="outlined" padding="p-5">
-      <!-- Search Bar -->
-      <UiSearchBar
-        v-model="reportsStore.filters.search"
-        placeholder="Cari berdasarkan ID, nama, lokasi, jenis satwa..."
-        :result-count="visibleReports.length"
-        class="mb-4"
-      />
-
-      <!-- Compact Inline Filters -->
-      <div class="flex flex-wrap items-center gap-3">
-        <!-- Status Filter -->
-        <select
-          :value="reportsStore.filters.status.length === 1 ? reportsStore.filters.status[0] : ''"
-          @change="(e) => reportsStore.updateFilters({ status: e.target.value ? [e.target.value] : [] })"
-          class="filter-select"
-        >
-          <option value="">Semua Status</option>
-          <option v-for="s in statusOptions" :key="s.value" :value="s.value">{{ s.label }}</option>
-        </select>
-
-        <!-- Animal Type Filter -->
-        <select
-          v-if="reportsStore.animalTypes.length > 0"
-          :value="reportsStore.filters.animalType.length === 1 ? reportsStore.filters.animalType[0] : ''"
-          @change="(e) => reportsStore.updateFilters({ animalType: e.target.value ? [e.target.value] : [] })"
-          class="filter-select"
-        >
-          <option value="">Semua Jenis Satwa</option>
-          <option v-for="type in reportsStore.animalTypes" :key="type" :value="type">{{ type }}</option>
-        </select>
-
-        <!-- Prioritas Filter -->
-        <select
-          :value="reportsStore.filters.prioritas.length === 1 ? reportsStore.filters.prioritas[0] : ''"
-          @change="(e) => reportsStore.updateFilters({ prioritas: e.target.value ? [e.target.value] : [] })"
-          class="filter-select"
-        >
-          <option value="">Semua Prioritas</option>
-          <option value="Rendah">Rendah</option>
-          <option value="Sedang">Sedang</option>
-          <option value="Tinggi">Tinggi</option>
-          <option value="Darurat">Darurat</option>
-        </select>
-
-        <!-- Date Range Preset -->
-        <select
-          @change="(e) => { if (e.target.value) applyDatePreset(e.target.value) }"
-          class="filter-select"
-        >
-          <option value="">Semua Periode</option>
-          <option value="this-month">Bulan Ini</option>
-          <option value="last-3-months">3 Bulan Terakhir</option>
-          <option value="last-6-months">6 Bulan Terakhir</option>
-          <option value="this-year">Tahun Ini</option>
-        </select>
-
-        <!-- Sorting -->
-        <select v-model="reportsStore.filters.sortBy" class="filter-select">
-          <option value="newest">Terbaru</option>
-          <option value="oldest">Terlama</option>
-          <option value="id-asc">ID (A-Z)</option>
-          <option value="id-desc">ID (Z-A)</option>
-          <option value="status">Status</option>
-        </select>
-
-        <!-- Items Per Page -->
-        <select
-          :value="reportsStore.pagination.itemsPerPage"
-          @change="reportsStore.setItemsPerPage(Number($event.target.value))"
-          class="filter-select"
-        >
-          <option :value="12">12 / hal</option>
-          <option :value="24">24 / hal</option>
-          <option :value="48">48 / hal</option>
-        </select>
-
-        <!-- Spacer to push reset button right -->
-        <div class="flex-grow"></div>
-
-        <!-- Filter Mencurigakan -->
+    <div class="rounded-lg border border-stone-200 bg-white p-4 shadow-sm sm:p-5">
+      <div class="mb-4 flex items-center justify-between gap-3">
+        <div>
+          <h3 class="text-base font-bold text-stone-800">Filter Laporan</h3>
+          <p class="text-xs text-stone-500">Cari dan saring laporan yang perlu ditindaklanjuti.</p>
+        </div>
         <button
-          @click="toggleSuspiciousFilter"
-          :class="[
-            'flex items-center gap-2 px-4 py-2 rounded-md text-sm font-semibold border transition-colors',
-            showOnlySuspicious
-              ? 'bg-red-600 text-white border-red-600'
-              : 'bg-white text-red-600 border-red-300 hover:bg-red-50'
-          ]"
-          :title="`${suspiciousCount} laporan dari nomor yang mengirim >=${SUSPICIOUS_THRESHOLD}x dalam ${SUSPICIOUS_WINDOW_DAYS} hari`"
+          @click="showFilters = !showFilters"
+          class="inline-flex items-center justify-center gap-2 rounded-md border border-stone-300 bg-white px-3 py-2 text-sm font-semibold text-stone-700 sm:hidden"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M7 12h10M10 18h4" />
           </svg>
-          Mencurigakan
-          <span class="bg-white text-red-600 text-xs font-bold rounded-full px-1.5 py-0.5 min-w-[20px] text-center" :class="{ 'bg-red-100': !showOnlySuspicious }">
-            {{ suspiciousCount }}
-          </span>
-        </button>
-
-        <!-- Export CSV -->
-        <button
-          @click="exportCSV"
-          class="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-semibold border transition-colors bg-white text-brand-green border-gray-300 hover:border-brand-green hover:bg-primary-50"
-          title="Export data ke CSV"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-          Export CSV
-        </button>
-
-        <!-- Reset Filters -->
-        <button
-          v-if="reportsStore.hasActiveFilters || showOnlySuspicious"
-          @click="reportsStore.clearFilters(); showOnlySuspicious = false"
-          class="filter-reset-btn"
-        >
-          Reset Filter
+          Filter
         </button>
       </div>
-    </UiCard>
+
+      <div :class="[showFilters ? 'block' : 'hidden', 'sm:block']">
+        <!-- Search Bar -->
+        <UiSearchBar
+          v-model="reportsStore.filters.search"
+          placeholder="Cari ID, nama, lokasi, atau jenis satwa..."
+          :result-count="visibleReports.length"
+          class="mb-4"
+        />
+
+        <!-- Compact Inline Filters -->
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+          <!-- Status Filter -->
+          <select
+            :value="reportsStore.filters.status.length === 1 ? reportsStore.filters.status[0] : ''"
+            @change="(e) => reportsStore.updateFilters({ status: e.target.value ? [e.target.value] : [] })"
+            class="filter-select w-full"
+          >
+            <option value="">Semua Status</option>
+            <option v-for="s in statusOptions" :key="s.value" :value="s.value">{{ s.label }}</option>
+          </select>
+
+          <!-- Animal Type Filter -->
+          <select
+            v-if="reportsStore.animalTypes.length > 0"
+            :value="reportsStore.filters.animalType.length === 1 ? reportsStore.filters.animalType[0] : ''"
+            @change="(e) => reportsStore.updateFilters({ animalType: e.target.value ? [e.target.value] : [] })"
+            class="filter-select w-full"
+          >
+            <option value="">Semua Jenis Satwa</option>
+            <option v-for="type in reportsStore.animalTypes" :key="type" :value="type">{{ type }}</option>
+          </select>
+
+          <!-- Prioritas Filter -->
+          <select
+            :value="reportsStore.filters.prioritas.length === 1 ? reportsStore.filters.prioritas[0] : ''"
+            @change="(e) => reportsStore.updateFilters({ prioritas: e.target.value ? [e.target.value] : [] })"
+            class="filter-select w-full"
+          >
+            <option value="">Semua Prioritas</option>
+            <option value="Rendah">Rendah</option>
+            <option value="Sedang">Sedang</option>
+            <option value="Tinggi">Tinggi</option>
+            <option value="Darurat">Darurat</option>
+          </select>
+
+          <!-- Date Range Preset -->
+          <select
+            @change="(e) => { if (e.target.value) applyDatePreset(e.target.value) }"
+            class="filter-select w-full"
+          >
+            <option value="">Semua Periode</option>
+            <option value="this-month">Bulan Ini</option>
+            <option value="last-3-months">3 Bulan Terakhir</option>
+            <option value="last-6-months">6 Bulan Terakhir</option>
+            <option value="this-year">Tahun Ini</option>
+          </select>
+
+          <!-- Sorting -->
+          <select v-model="reportsStore.filters.sortBy" class="filter-select w-full">
+            <option value="newest">Terbaru</option>
+            <option value="oldest">Terlama</option>
+            <option value="id-asc">ID (A-Z)</option>
+            <option value="id-desc">ID (Z-A)</option>
+            <option value="status">Status</option>
+          </select>
+
+          <!-- Items Per Page -->
+          <select
+            :value="reportsStore.pagination.itemsPerPage"
+            @change="reportsStore.setItemsPerPage(Number($event.target.value))"
+            class="filter-select w-full"
+          >
+            <option :value="12">12 / hal</option>
+            <option :value="24">24 / hal</option>
+            <option :value="48">48 / hal</option>
+          </select>
+        </div>
+
+        <div class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <!-- Filter Mencurigakan -->
+          <button
+            @click="toggleSuspiciousFilter"
+            :class="[
+              'inline-flex items-center justify-center gap-2 rounded-md border px-4 py-2 text-sm font-semibold transition-colors',
+              showOnlySuspicious
+                ? 'border-red-600 bg-red-600 text-white'
+                : 'border-red-200 bg-white text-red-700 hover:bg-red-50'
+            ]"
+            :title="`${suspiciousCount} laporan dari nomor yang mengirim >=${SUSPICIOUS_THRESHOLD}x dalam ${SUSPICIOUS_WINDOW_DAYS} hari`"
+          >
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3m0 4h.01M10.3 4.7 2.9 17.5A2 2 0 0 0 4.6 20h14.8a2 2 0 0 0 1.7-2.5L13.7 4.7a2 2 0 0 0-3.4 0Z" />
+            </svg>
+            Mencurigakan
+            <span
+              class="min-w-[1.25rem] rounded-full px-1.5 py-0.5 text-center text-xs font-bold"
+              :class="showOnlySuspicious ? 'bg-white text-red-700' : 'bg-red-50 text-red-700'"
+            >
+              {{ suspiciousCount }}
+            </span>
+          </button>
+
+          <!-- Reset Filters -->
+          <button
+            v-if="reportsStore.hasActiveFilters || showOnlySuspicious"
+            @click="reportsStore.clearFilters(); showOnlySuspicious = false"
+            class="filter-reset-btn"
+          >
+            Reset Filter
+          </button>
+        </div>
+      </div>
+    </div>
 
     <!-- Loading State -->
-    <div v-if="reportsStore.isLoading" class="text-center py-20">
+    <div v-if="reportsStore.isLoading" class="rounded-lg border border-stone-200 bg-white py-20 text-center shadow-sm">
       <UiLoading size="lg" />
-      <p class="mt-4 text-gray-600">Memuat laporan...</p>
+      <p class="mt-4 text-sm font-medium text-stone-600">Memuat laporan...</p>
     </div>
 
     <!-- No Results -->
     <div
       v-else-if="visibleReports.length === 0"
-      class="text-center py-20 bg-gray-50 rounded-lg border border-gray-200"
+      class="rounded-lg border border-stone-200 bg-white px-6 py-20 text-center shadow-sm"
     >
       <svg
-        class="mx-auto h-24 w-24 text-gray-400 mb-4"
+        class="mx-auto mb-4 h-16 w-16 text-stone-400"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor"
+        stroke-width="1.8"
       >
         <path
           stroke-linecap="round"
           stroke-linejoin="round"
-          stroke-width="2"
-          d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          d="M4 5h16v14H4V5ZM8 9h8M8 13h5M16 17l4 4M20 17l-4 4"
         />
       </svg>
-      <p class="text-xl font-semibold text-gray-700 mb-2">Tidak ada laporan ditemukan</p>
-      <p class="text-gray-500 mb-4">Coba sesuaikan filter pencarian</p>
+      <p class="mb-2 text-lg font-semibold text-stone-800">Tidak ada laporan ditemukan</p>
+      <p class="mb-5 text-sm text-stone-500">Sesuaikan kata kunci atau hapus filter aktif.</p>
       <UiButton @click="reportsStore.clearFilters(); showOnlySuspicious = false" variant="primary">
         Hapus Semua Filter
       </UiButton>
@@ -639,7 +714,7 @@ const prioritasClass = (p) => {
     <!-- Grid View -->
     <div
       v-else-if="viewMode === 'grid'"
-      class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+      class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3"
     >
       <UiCard
         v-for="report in displayedReports"
@@ -648,115 +723,116 @@ const prioritasClass = (p) => {
         clickable
         @click="handleViewDetail(report.id)"
         padding="p-0"
-        class="h-full overflow-hidden border border-gray-200"
-        :class="{ 'ring-1 ring-red-200 border-red-200': isSuspicious(report) }"
+        class="h-full overflow-hidden border border-stone-200 bg-white shadow-sm"
+        :class="{ 'border-red-200 ring-1 ring-red-100': isSuspicious(report) }"
       >
-        <div class="p-5 pb-4">
-        <div class="flex justify-between items-start gap-3 mb-4">
+        <!-- Card Header -->
+        <div class="border-b border-stone-100 bg-stone-50/70 px-5 pt-5 pb-4">
+          <div class="mb-3 flex items-start justify-between gap-3">
+            <div class="min-w-0">
+              <p class="text-xs font-semibold uppercase tracking-wide text-stone-500">ID Laporan</p>
+              <h3 class="mt-1 truncate font-mono text-lg font-extrabold leading-none text-stone-900">
+                {{ report.idLaporan }}
+              </h3>
+            </div>
+            <div class="flex flex-col items-end gap-1.5">
+              <UiBadge :status="report.status" size="sm" dot />
+              <span :class="prioritasClass(report.prioritas)" class="rounded-full border px-2 py-0.5 text-[11px] font-semibold leading-tight">
+                {{ report.prioritas || 'Sedang' }}
+              </span>
+            </div>
+          </div>
+
           <div class="min-w-0">
-            <p class="text-xs font-semibold uppercase tracking-wide text-gray-400">ID Laporan</p>
-            <h3 class="mt-1 text-xl font-bold text-primary-700 font-mono leading-none">{{ report.idLaporan }}</h3>
-            <!-- Flag mencurigakan -->
+            <p class="text-xs font-semibold uppercase tracking-wide text-stone-500">Jenis Satwa</p>
+            <strong class="mt-1 block text-base font-bold leading-snug text-stone-900">
+              {{ report.jenisSatwa || 'Jenis satwa belum diisi' }}
+            </strong>
+            <p class="mt-0.5 truncate text-sm text-stone-500">{{ report.kategoriKonflik || 'Kategori belum diisi' }}</p>
+          </div>
+
+          <div v-if="isSuspicious(report)" class="mt-3">
             <span
-              v-if="isSuspicious(report)"
-              class="mt-3 inline-flex items-center gap-1.5 bg-red-50 text-red-700 text-xs font-semibold px-2.5 py-1 rounded-md border border-red-200"
+              class="inline-flex items-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-700"
               :title="`Nomor ${report.telepon} telah mengirim ${SUSPICIOUS_THRESHOLD}+ laporan dalam ${SUSPICIOUS_WINDOW_DAYS} hari terakhir`"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3m0 4h.01M10.3 4.7 2.9 17.5A2 2 0 0 0 4.6 20h14.8a2 2 0 0 0 1.7-2.5L13.7 4.7a2 2 0 0 0-3.4 0Z" />
               </svg>
               Mencurigakan
             </span>
           </div>
-          <div class="flex items-center gap-2 flex-wrap justify-end">
-            <span :class="prioritasClass(report.prioritas)" class="text-xs px-2.5 py-1 rounded-full border font-semibold">
-              {{ report.prioritas || 'Sedang' }}
+        </div>
+
+        <!-- Card Body -->
+        <div class="space-y-3 px-5 py-4">
+          <!-- Pelapor & Telepon -->
+          <div class="grid grid-cols-2 gap-2">
+            <div class="min-w-0 rounded-md border border-stone-100 bg-stone-50/50 px-3 py-2">
+              <p class="text-[10px] font-semibold uppercase tracking-wider text-stone-400">Pelapor</p>
+              <div class="mt-0.5 flex items-center gap-1.5">
+                <span class="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded text-stone-400">
+                  <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0" />
+                  </svg>
+                </span>
+                <p class="truncate text-sm font-semibold text-stone-800">{{ report.nama || '-' }}</p>
+              </div>
+            </div>
+            <div class="min-w-0 rounded-md border border-stone-100 bg-stone-50/50 px-3 py-2">
+              <p class="text-[10px] font-semibold uppercase tracking-wider text-stone-400">Telepon</p>
+              <p class="mt-0.5 truncate text-sm font-semibold text-stone-800">{{ report.telepon || '-' }}</p>
+            </div>
+          </div>
+
+          <!-- Lokasi -->
+          <div class="flex items-start gap-2.5 text-sm text-stone-600">
+            <span class="mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md border border-stone-200 bg-stone-50 text-stone-500">
+              <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 21s7-4.7 7-11a7 7 0 1 0-14 0c0 6.3 7 11 7 11ZM12 10.5h.01" />
+              </svg>
             </span>
-            <UiBadge :status="report.status" size="sm" dot />
+            <div class="min-w-0">
+              <p class="line-clamp-2 text-sm leading-snug text-stone-700">{{ report.lokasi || 'Tidak ada lokasi' }}</p>
+              <p v-if="report.kabupatenKota" class="mt-0.5 text-xs text-stone-400">{{ report.kabupatenKota }}</p>
+            </div>
+          </div>
+
+          <!-- Tanggal Dilaporkan -->
+          <div class="flex items-center gap-2.5 text-sm text-stone-500">
+            <span class="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md border border-stone-200 bg-stone-50 text-stone-500">
+              <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2Z" />
+              </svg>
+            </span>
+            <span class="truncate">{{ formatDate(report.createdAt) || '-' }}</span>
+          </div>
+
+          <!-- Deskripsi singkat -->
+          <div v-if="report.deskripsi" class="rounded-md border border-stone-100 bg-stone-50/50 px-3 py-2">
+            <p class="text-[10px] font-semibold uppercase tracking-wider text-stone-400">Deskripsi</p>
+            <p class="mt-0.5 line-clamp-2 text-xs leading-relaxed text-stone-600">{{ report.deskripsi }}</p>
+          </div>
+
+          <!-- Estimasi Kerugian & Status Satwa -->
+          <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-stone-500">
+            <span v-if="report.estimasi_kerugian || report.estimasi_kerugian === 0" class="inline-flex items-center gap-1">
+              <svg class="h-3.5 w-3.5 text-stone-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+              </svg>
+              <span>Rp {{ formatRupiah(report.estimasi_kerugian) }}</span>
+            </span>
+            <span v-if="report.status_satwa_akhir" class="inline-flex items-center gap-1">
+              <svg class="h-3.5 w-3.5 text-stone-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 12l4 4L19 6" />
+              </svg>
+              <span class="truncate max-w-[10rem]">{{ report.status_satwa_akhir }}</span>
+            </span>
           </div>
         </div>
 
-        <div class="space-y-3 text-sm text-gray-600">
-          <div>
-            <p class="text-xs font-semibold uppercase tracking-wide text-gray-400">Jenis Satwa</p>
-            <strong class="mt-1 block text-lg leading-snug font-bold text-gray-900">{{ report.jenisSatwa }}</strong>
-          </div>
-
-          <div class="flex items-center text-gray-600">
-            <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h10M7 12h10M7 17h10" />
-            </svg>
-            <span>Kategori: {{ report.kategoriKonflik || '-' }}</span>
-          </div>
-
-          <div class="flex items-start text-gray-600">
-            <svg class="h-5 w-5 mr-2 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-              />
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-              />
-            </svg>
-            <span>{{ report.lokasi || 'Tidak ada lokasi' }}</span>
-          </div>
-
-          <div class="flex items-center text-gray-600">
-            <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-              />
-            </svg>
-            <span>{{ formatDate(report.createdAt) }}</span>
-          </div>
-
-          <div
-            v-if="report.estimasi_kerugian || report.estimasi_kerugian === 0"
-            class="flex items-center text-gray-600"
-          >
-            <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 8c-1.657 0-3 .843-3 1.882 0 1.04 1.343 1.883 3 1.883s3 .842 3 1.883C15 14.157 13.657 15 12 15m0-7v7m0 4v-4"
-              />
-            </svg>
-            <span>Estimasi kerugian: Rp {{ formatRupiah(report.estimasi_kerugian) }}</span>
-          </div>
-
-          <div v-if="report.status_satwa_akhir" class="flex items-center text-gray-600">
-            <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-            </svg>
-            <span>Status satwa akhir: {{ report.status_satwa_akhir }}</span>
-          </div>
-
-          <div class="flex items-center text-gray-600">
-            <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-              />
-            </svg>
-            <span class="truncate">{{ report.nama }}</span>
-          </div>
-        </div>
-
-        </div>
-
-        <div class="grid grid-cols-2 gap-3 border-t border-gray-100 bg-gray-50 p-4">
+        <!-- Card Footer Actions -->
+        <div class="grid grid-cols-2 gap-3 border-t border-stone-100 bg-stone-50 p-4">
           <UiButton variant="outline" size="sm" @click.stop="openVerification(report)" class="bg-white">
             Periksa
           </UiButton>
@@ -768,36 +844,45 @@ const prioritasClass = (p) => {
     </div>
 
     <!-- List View -->
-    <div v-else-if="viewMode === 'list'" class="bg-white rounded-lg border border-stone-200 shadow-sm overflow-hidden">
+    <div v-else-if="viewMode === 'list'" class="overflow-hidden rounded-lg border border-stone-200 bg-white shadow-sm">
+      <div class="flex flex-col gap-2 border-b border-stone-200 bg-stone-50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h3 class="text-sm font-bold text-stone-800">Daftar Laporan</h3>
+          <p class="text-xs text-stone-500">{{ displayedReports.length }} laporan pada halaman ini</p>
+        </div>
+        <span class="text-xs font-medium text-stone-500">
+          Urut: {{ reportsStore.filters.sortBy }}
+        </span>
+      </div>
       <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-stone-100">
-          <thead class="bg-stone-50">
+          <thead class="bg-white">
             <tr>
-              <th class="px-5 py-3 text-left text-xs font-semibold text-stone-500 uppercase tracking-wider">
-                ID
+              <th class="px-5 py-3 text-left text-xs font-bold uppercase tracking-wide text-stone-500">
+                Laporan
               </th>
-              <th class="px-5 py-3 text-left text-xs font-semibold text-stone-500 uppercase tracking-wider">
+              <th class="px-5 py-3 text-left text-xs font-bold uppercase tracking-wide text-stone-500">
                 Pelapor
               </th>
-              <th class="px-5 py-3 text-left text-xs font-semibold text-stone-500 uppercase tracking-wider">
+              <th class="px-5 py-3 text-left text-xs font-bold uppercase tracking-wide text-stone-500">
                 Jenis Satwa
               </th>
-              <th class="px-5 py-3 text-left text-xs font-semibold text-stone-500 uppercase tracking-wider">
+              <th class="px-5 py-3 text-left text-xs font-bold uppercase tracking-wide text-stone-500">
                 Kategori
               </th>
-              <th class="px-5 py-3 text-left text-xs font-semibold text-stone-500 uppercase tracking-wider">
+              <th class="px-5 py-3 text-left text-xs font-bold uppercase tracking-wide text-stone-500">
                 Lokasi
               </th>
-              <th class="px-5 py-3 text-left text-xs font-semibold text-stone-500 uppercase tracking-wider">
+              <th class="px-5 py-3 text-left text-xs font-bold uppercase tracking-wide text-stone-500">
                 Tanggal
               </th>
-              <th class="px-5 py-3 text-left text-xs font-semibold text-stone-500 uppercase tracking-wider">
+              <th class="px-5 py-3 text-left text-xs font-bold uppercase tracking-wide text-stone-500">
                 Prioritas
               </th>
-              <th class="px-5 py-3 text-left text-xs font-semibold text-stone-500 uppercase tracking-wider">
+              <th class="px-5 py-3 text-left text-xs font-bold uppercase tracking-wide text-stone-500">
                 Status
               </th>
-              <th class="px-5 py-3 text-left text-xs font-semibold text-stone-500 uppercase tracking-wider">
+              <th class="px-5 py-3 text-right text-xs font-bold uppercase tracking-wide text-stone-500">
                 Aksi
               </th>
             </tr>
@@ -806,61 +891,65 @@ const prioritasClass = (p) => {
             <tr
               v-for="report in displayedReports"
               :key="report.id"
-              class="hover:bg-stone-50 transition-colors cursor-pointer"
-              :class="{ 'bg-red-50/50': isSuspicious(report) }"
+              class="cursor-pointer transition-colors hover:bg-stone-50"
+              :class="{ 'bg-red-50/40': isSuspicious(report) }"
               @click="handleViewDetail(report.id)"
             >
-              <td class="px-5 py-3.5 whitespace-nowrap text-sm font-mono font-semibold text-forest-700">
-                {{ report.idLaporan }}
+              <td class="whitespace-nowrap px-5 py-4">
+                <p class="font-mono text-sm font-bold text-stone-900">{{ report.idLaporan }}</p>
+                <p class="mt-1 text-xs text-stone-500">{{ report.kabupatenKota || '-' }}</p>
               </td>
-              <td class="px-5 py-3.5 whitespace-nowrap text-sm text-stone-800">
-                <div class="flex items-center gap-2">
-                  {{ report.nama }}
+              <td class="whitespace-nowrap px-5 py-4 text-sm text-stone-800">
+                <div class="flex max-w-[14rem] items-center gap-2">
+                  <span class="truncate font-semibold">{{ report.nama || '-' }}</span>
                   <span
                     v-if="isSuspicious(report)"
-                    class="inline-flex items-center gap-1 bg-red-100 text-red-700 text-xs font-semibold px-2 py-0.5 rounded-full border border-red-200"
+                    class="inline-flex flex-shrink-0 items-center gap-1 rounded-full border border-red-200 bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700"
                     :title="`Nomor ${report.telepon} telah mengirim ${SUSPICIOUS_THRESHOLD}+ laporan dalam ${SUSPICIOUS_WINDOW_DAYS} hari`"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3m0 4h.01M10.3 4.7 2.9 17.5A2 2 0 0 0 4.6 20h14.8a2 2 0 0 0 1.7-2.5L13.7 4.7a2 2 0 0 0-3.4 0Z" />
                     </svg>
                     !
                   </span>
                 </div>
+                <p class="mt-1 text-xs text-stone-500">{{ report.telepon || '-' }}</p>
               </td>
-              <td class="px-5 py-3.5 whitespace-nowrap text-sm text-stone-600">
-                {{ report.jenisSatwa }}
+              <td class="whitespace-nowrap px-5 py-4 text-sm font-semibold text-stone-800">
+                {{ report.jenisSatwa || '-' }}
               </td>
-              <td class="px-5 py-3.5 whitespace-nowrap text-sm text-stone-600">
+              <td class="whitespace-nowrap px-5 py-4 text-sm text-stone-600">
                 {{ report.kategoriKonflik || '-' }}
               </td>
-              <td class="px-5 py-3.5 text-sm text-stone-600 max-w-xs truncate">
-                {{ report.lokasi || '-' }}
+              <td class="max-w-xs px-5 py-4 text-sm text-stone-600">
+                <span class="line-clamp-2">{{ report.lokasi || '-' }}</span>
               </td>
-              <td class="px-5 py-3.5 whitespace-nowrap text-sm text-stone-500">
+              <td class="whitespace-nowrap px-5 py-4 text-sm text-stone-500">
                 {{ formatDate(report.createdAt) }}
               </td>
-              <td class="px-5 py-3.5 whitespace-nowrap text-sm">
-                <span :class="prioritasClass(report.prioritas)" class="px-2 py-1 text-xs rounded-full border">
+              <td class="whitespace-nowrap px-5 py-4 text-sm">
+                <span :class="prioritasClass(report.prioritas)" class="rounded-full border px-2.5 py-1 text-xs font-semibold">
                   {{ report.prioritas || 'Sedang' }}
                 </span>
               </td>
-              <td class="px-5 py-3.5 whitespace-nowrap">
+              <td class="whitespace-nowrap px-5 py-4">
                 <UiBadge :status="report.status" size="sm" />
               </td>
-              <td class="px-5 py-3.5 whitespace-nowrap text-sm">
-                <button
-                  @click.stop="handleViewDetail(report.id)"
-                  class="text-forest-700 hover:text-forest-900 font-semibold text-xs"
-                >
-                  Detail
-                </button>
-                <button
-                  @click.stop="openVerification(report)"
-                  class="ml-3 text-stone-600 hover:text-stone-900 font-semibold text-xs"
-                >
-                  Periksa
-                </button>
+              <td class="whitespace-nowrap px-5 py-4 text-right text-sm">
+                <div class="inline-flex items-center gap-2">
+                  <button
+                    @click.stop="openVerification(report)"
+                    class="rounded-md border border-stone-300 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 transition-colors hover:border-stone-500 hover:bg-stone-50"
+                  >
+                    Periksa
+                  </button>
+                  <button
+                    @click.stop="handleViewDetail(report.id)"
+                    class="rounded-md bg-forest-600 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-forest-700"
+                  >
+                    Detail
+                  </button>
+                </div>
               </td>
             </tr>
           </tbody>
@@ -871,94 +960,112 @@ const prioritasClass = (p) => {
     <!-- Modal Popup Verifikasi Admin Riset -->
     <div
       v-if="selectedForVerification"
-      class="fixed inset-0 z-[10000] flex items-start md:items-center justify-center overflow-y-auto bg-gray-900/60 p-4 pt-[calc(1rem_+_env(safe-area-inset-top))] pb-[calc(1rem_+_env(safe-area-inset-bottom))] backdrop-blur-sm transition-opacity"
+      class="fixed inset-0 z-[10000] flex items-start justify-center overflow-y-auto bg-stone-950/60 p-4 pt-[calc(1rem_+_env(safe-area-inset-top))] pb-[calc(1rem_+_env(safe-area-inset-bottom))] backdrop-blur-sm transition-opacity md:items-center"
       @click="clearVerification"
     >
       <div 
-        class="bg-white rounded-lg shadow-lg w-full max-w-4xl max-h-[calc(100dvh_-_2rem_-_env(safe-area-inset-top)_-_env(safe-area-inset-bottom))] overflow-y-auto flex flex-col md:flex-row transform transition-all"
+        class="flex max-h-[calc(100dvh_-_2rem_-_env(safe-area-inset-top)_-_env(safe-area-inset-bottom))] w-full max-w-5xl transform flex-col overflow-hidden rounded-lg border border-stone-200 bg-white shadow-2xl transition-all md:flex-row"
         @click.stop
       >
         <!-- Info Column -->
-        <div class="bg-gray-50 p-6 md:p-8 md:w-1/2 border-b md:border-b-0 md:border-r border-gray-100 flex flex-col justify-center">
-          <div class="flex items-center justify-between mb-6">
-            <h4 class="text-2xl font-bold font-display text-gray-800">Verifikasi Laporan</h4>
+        <div class="flex flex-col border-b border-stone-200 bg-stone-50 p-6 md:w-[45%] md:border-b-0 md:border-r md:p-8">
+          <div class="mb-6 flex items-start gap-3">
+            <div class="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-lg border border-stone-200 bg-white text-stone-700">
+              <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 4h14v16H5V4ZM8 8h8M8 12h8M8 16h5" />
+              </svg>
+            </div>
+            <div class="min-w-0">
+              <p class="text-xs font-semibold uppercase tracking-wide text-stone-500">Verifikasi Laporan</p>
+              <h4 class="mt-1 truncate font-mono text-2xl font-extrabold text-stone-900">{{ selectedForVerification.idLaporan }}</h4>
+              <div class="mt-3 flex flex-wrap items-center gap-2">
+                <UiBadge :status="selectedForVerification.status" size="sm" />
+                <span :class="prioritasClass(selectedForVerification.prioritas)" class="rounded-full border px-2.5 py-1 text-xs font-semibold">
+                  {{ selectedForVerification.prioritas || 'Sedang' }}
+                </span>
+              </div>
+            </div>
           </div>
           
-          <div class="space-y-4">
-            <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-              <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-1">ID Laporan</p>
-              <p class="font-mono font-bold text-primary-700 text-lg">{{ selectedForVerification.idLaporan }}</p>
+          <div class="space-y-4 overflow-y-auto pr-1">
+            <div class="rounded-lg border border-stone-200 bg-white p-4">
+              <p class="mb-1 text-xs font-semibold uppercase tracking-wide text-stone-500">Jenis Satwa</p>
+              <p class="font-bold text-stone-900">{{ selectedForVerification.jenisSatwa || '-' }}</p>
+              <p class="mt-1 text-sm text-stone-500">{{ selectedForVerification.kategoriKonflik || 'Kategori belum diisi' }}</p>
             </div>
             
-            <div class="grid grid-cols-2 gap-4">
-              <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-                 <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-1">Jenis Satwa</p>
-                 <p class="font-semibold text-gray-800">{{ selectedForVerification.jenisSatwa }}</p>
+            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div class="rounded-lg border border-stone-200 bg-white p-4">
+                 <p class="mb-1 text-xs font-semibold uppercase tracking-wide text-stone-500">Pelapor</p>
+                 <p class="truncate font-semibold text-stone-900">{{ selectedForVerification.nama || '-' }}</p>
               </div>
-              <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-                 <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-1">Kategori</p>
-                 <p class="font-semibold text-gray-800">{{ selectedForVerification.kategoriKonflik || '-' }}</p>
+              <div class="rounded-lg border border-stone-200 bg-white p-4">
+                 <p class="mb-1 text-xs font-semibold uppercase tracking-wide text-stone-500">Tanggal</p>
+                 <p class="font-semibold text-stone-900">{{ formatDate(selectedForVerification.createdAt) || '-' }}</p>
               </div>
             </div>
 
-            <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm flex items-center justify-between">
-              <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Status Saat Ini</p>
-              <UiBadge :status="selectedForVerification.status" size="sm" />
+            <div class="rounded-lg border border-stone-200 bg-white p-4">
+              <p class="mb-1 text-xs font-semibold uppercase tracking-wide text-stone-500">Lokasi</p>
+              <p class="text-sm leading-relaxed text-stone-700">{{ selectedForVerification.lokasi || '-' }}</p>
             </div>
           </div>
         </div>
 
         <!-- Form Column -->
-        <div class="p-6 md:p-8 md:w-1/2 bg-white relative">
-          <button @click="clearVerification" class="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors">
-            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div class="relative overflow-y-auto bg-white p-6 md:w-[55%] md:p-8">
+          <button @click="clearVerification" class="absolute right-4 top-4 rounded-full p-2 text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-700">
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
           
-          <h4 class="text-xl font-semibold text-gray-800 mb-5 pr-10 mt-1 md:mt-0">Tindakan Admin</h4>
+          <div class="mb-6 pr-10">
+            <h4 class="text-xl font-bold text-stone-900">Tindakan Admin</h4>
+            <p class="mt-1 text-sm text-stone-500">Lengkapi hasil pemeriksaan sebelum menerima atau menolak laporan.</p>
+          </div>
           
           <form @submit.prevent="saveVerification('save')" class="space-y-6 flex flex-col h-full">
             <div class="space-y-4">
               <div>
-                <label for="estimasi" class="block text-sm font-semibold text-gray-700 mb-2">Estimasi Kerugian (Rp)</label>
+                <label for="estimasi" class="mb-2 block text-sm font-semibold text-stone-700">Estimasi Kerugian (Rp)</label>
                 <div class="relative">
-                  <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-500 font-semibold">Rp</span>
+                  <span class="absolute inset-y-0 left-0 flex items-center pl-4 font-semibold text-stone-500">Rp</span>
                   <input
                     id="estimasi"
                     type="number"
                     min="0"
                     v-model="verificationForm.estimasi_kerugian"
-                    class="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-colors"
+                    class="w-full rounded-md border border-stone-300 py-3 pl-12 pr-4 transition-colors focus:border-forest-500 focus:outline-none focus:ring-2 focus:ring-forest-500/20"
                     placeholder="Contoh: 5000000"
                   />
                 </div>
               </div>
               
               <div>
-                <label for="status-satwa" class="block text-sm font-semibold text-gray-700 mb-2">Status Satwa Akhir</label>
+                <label for="status-satwa" class="mb-2 block text-sm font-semibold text-stone-700">Status Satwa Akhir</label>
                 <input
                   id="status-satwa"
                   type="text"
                   v-model="verificationForm.status_satwa_akhir"
-                  class="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-colors"
+                  class="w-full rounded-md border border-stone-300 px-4 py-3 transition-colors focus:border-forest-500 focus:outline-none focus:ring-2 focus:ring-forest-500/20"
                   placeholder="Misal: Dievakuasi ke pusat rehabilitasi"
                 />
               </div>
 
               <div>
-                <label for="catatan-admin" class="block text-sm font-semibold text-gray-700 mb-2">Catatan Admin</label>
+                <label for="catatan-admin" class="mb-2 block text-sm font-semibold text-stone-700">Catatan Admin</label>
                 <textarea
                   id="catatan-admin"
                   rows="3"
                   v-model="verificationForm.catatan_admin"
-                  class="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-colors resize-none"
+                  class="w-full resize-none rounded-md border border-stone-300 px-4 py-3 transition-colors focus:border-forest-500 focus:outline-none focus:ring-2 focus:ring-forest-500/20"
                   placeholder="Contoh: data sudah dikonfirmasi melalui telepon, atau alasan laporan tidak valid"
                 ></textarea>
               </div>
             </div>
 
-            <div class="mt-auto pt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div class="mt-auto grid grid-cols-1 gap-3 border-t border-stone-100 pt-5 sm:grid-cols-3">
               <UiButton
                 type="button"
                 variant="primary"
@@ -994,22 +1101,22 @@ const prioritasClass = (p) => {
     <!-- Pagination -->
     <div
       v-if="visibleTotalPages > 1"
-      class="mt-8 flex flex-col sm:flex-row items-center justify-between"
+      class="flex flex-col gap-4 rounded-lg border border-stone-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between"
     >
-      <p class="text-sm text-gray-600 mb-4 sm:mb-0">
+      <p class="text-sm text-stone-600">
         Menampilkan
-        {{ ((reportsStore.pagination.currentPage - 1) * reportsStore.pagination.itemsPerPage) + 1 }}
+        <span class="font-semibold text-stone-900">{{ ((reportsStore.pagination.currentPage - 1) * reportsStore.pagination.itemsPerPage) + 1 }}</span>
         -
-        {{ Math.min(reportsStore.pagination.currentPage * reportsStore.pagination.itemsPerPage, visibleReports.length) }}
-        dari {{ visibleReports.length }} laporan
+        <span class="font-semibold text-stone-900">{{ Math.min(reportsStore.pagination.currentPage * reportsStore.pagination.itemsPerPage, visibleReports.length) }}</span>
+        dari <span class="font-semibold text-stone-900">{{ visibleReports.length }}</span> laporan
       </p>
 
-      <div class="flex items-center space-x-1.5">
+      <div class="flex flex-wrap items-center gap-1.5">
         <!-- Previous Button -->
         <button
           @click="goToPage(reportsStore.pagination.currentPage - 1)"
           :disabled="reportsStore.pagination.currentPage === 1"
-          class="px-3 py-2 rounded-lg border border-stone-300 text-stone-600 text-sm hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          class="rounded-lg border border-stone-300 px-3 py-2 text-sm font-medium text-stone-600 transition-colors hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40"
         >
           Sebelumnya
         </button>
@@ -1020,7 +1127,7 @@ const prioritasClass = (p) => {
           :key="page"
           @click="goToPage(page)"
           :class="[
-            'px-3 py-2 rounded-lg text-sm transition-colors',
+            'rounded-lg px-3 py-2 text-sm font-medium transition-colors',
             page === reportsStore.pagination.currentPage
               ? 'bg-forest-600 text-white'
               : 'border border-stone-300 text-stone-600 hover:bg-stone-50',
@@ -1033,7 +1140,7 @@ const prioritasClass = (p) => {
         <button
           @click="goToPage(reportsStore.pagination.currentPage + 1)"
           :disabled="reportsStore.pagination.currentPage === visibleTotalPages"
-          class="px-3 py-2 rounded-lg border border-stone-300 text-stone-600 text-sm hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          class="rounded-lg border border-stone-300 px-3 py-2 text-sm font-medium text-stone-600 transition-colors hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40"
         >
           Berikutnya
         </button>

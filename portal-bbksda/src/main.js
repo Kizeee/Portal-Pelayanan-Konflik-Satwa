@@ -9,9 +9,7 @@ import { registerSW } from 'virtual:pwa-register'
 // Daftarkan Service Worker PWA
 const updateSW = registerSW({
   onNeedRefresh() {
-    if (confirm('Ada versi baru tersedia. Muat ulang untuk memperbarui aplikasi?')) {
-      updateSW(true)
-    }
+    updateSW(true)
   },
   onOfflineReady() {
     console.log('✅ Aplikasi siap digunakan secara offline!')
