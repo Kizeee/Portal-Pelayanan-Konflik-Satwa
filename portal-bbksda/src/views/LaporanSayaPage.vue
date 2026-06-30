@@ -2,13 +2,17 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useReportsStore } from '../stores/reports'
+import { useAuthStore } from '../stores/auth'
 import { useReporterNotificationsStore } from '../stores/reporterNotifications'
+import { useUIStore } from '../stores/ui'
 import { normalizeTicketId } from '../utils/ticketId'
 
 const route = useRoute()
 const router = useRouter()
 const reportsStore = useReportsStore()
+const authStore = useAuthStore()
 const reporterNotifStore = useReporterNotificationsStore()
+const uiStore = useUIStore()
 
 const ticketId = ref('')
 const foundReportId = ref('')
@@ -98,6 +102,15 @@ const handleSearch = async (updateRoute = true) => {
   } finally {
     isSearching.value = false
   }
+}
+
+const canEditReport = computed(() => {
+  return Boolean(!authStore.user && foundReport.value && !foundReport.value.reporterEditUsed)
+})
+
+const handleEditReport = () => {
+  if (!canEditReport.value) return
+  uiStore.openEditModal(foundReport.value)
 }
 
 const handleViewDetail = () => {
@@ -208,7 +221,23 @@ onMounted(() => {
         </div>
       </div>
 
+      <div v-if="!authStore.user" class="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+        <p v-if="canEditReport" class="font-medium">
+          Anda memiliki 1 kali kesempatan untuk memperbaiki data laporan jika ada salah ketik atau kekeliruan pengisian.
+        </p>
+        <p v-else class="font-medium">
+          Kesempatan memperbaiki laporan sudah digunakan.
+        </p>
+      </div>
+
       <div class="mt-5 flex flex-col sm:flex-row gap-3">
+        <button
+          v-if="canEditReport"
+          @click="handleEditReport"
+          class="flex-1 bg-amber-500 text-white font-semibold py-2.5 px-5 rounded-lg hover:bg-amber-600 transition-colors text-sm"
+        >
+          Perbaiki Laporan
+        </button>
         <button
           @click="handleViewDetail"
           class="flex-1 bg-forest-600 text-white font-semibold py-2.5 px-5 rounded-lg hover:bg-forest-700 transition-colors text-sm"

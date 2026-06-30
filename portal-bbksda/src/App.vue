@@ -129,11 +129,26 @@ const handleCloseNotification = () => {
 }
 
 const handleSaveChanges = async (updatedData) => {
-  const reportId = uiStore.editModal.reportData?.id
+  const reportData = uiStore.editModal.reportData
+  const reportId = reportData?.id
   if (!reportId) return
 
+  const isReporterEdit = !authStore.user
+  if (isReporterEdit && reportData.reporterEditUsed) {
+    uiStore.showNotification('error', 'Tidak dapat mengedit', 'Kesempatan memperbaiki laporan sudah digunakan.')
+    return
+  }
+
+  const payload = isReporterEdit
+    ? {
+        ...updatedData,
+        reporterEditUsed: true,
+        reporterEditedAt: new Date(),
+      }
+    : updatedData
+
   try {
-    await updateReport(reportId, updatedData)
+    await updateReport(reportId, payload)
     await reportsStore.loadReports()
     uiStore.closeEditModal()
     uiStore.showNotification('success', 'Berhasil', 'Laporan berhasil diperbarui.')

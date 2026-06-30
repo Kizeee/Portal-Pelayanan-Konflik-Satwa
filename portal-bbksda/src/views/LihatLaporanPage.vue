@@ -723,11 +723,11 @@ const prioritasClass = (p) => {
         clickable
         @click="handleViewDetail(report.id)"
         padding="p-0"
-        class="h-full overflow-hidden border border-stone-200 bg-white shadow-sm"
-        :class="{ 'border-red-200 ring-1 ring-red-100': isSuspicious(report) }"
+        class="h-full overflow-hidden border-2 border-stone-200 bg-white shadow-sm"
+        :class="{ 'border-red-300 ring-1 ring-red-100': isSuspicious(report) }"
       >
         <!-- Card Header -->
-        <div class="border-b border-stone-100 bg-stone-50/70 px-5 pt-5 pb-4">
+        <div class="border-b-2 border-stone-200 bg-stone-50 px-5 pt-5 pb-4">
           <div class="mb-3 flex items-start justify-between gap-3">
             <div class="min-w-0">
               <p class="text-xs font-semibold uppercase tracking-wide text-stone-500">ID Laporan</p>
@@ -765,13 +765,13 @@ const prioritasClass = (p) => {
         </div>
 
         <!-- Card Body -->
-        <div class="space-y-3 px-5 py-4">
+        <div class="space-y-3 px-5 py-4 border-l-4 border-forest-500/20">
           <!-- Pelapor & Telepon -->
           <div class="grid grid-cols-2 gap-2">
             <div class="min-w-0 rounded-md border border-stone-100 bg-stone-50/50 px-3 py-2">
               <p class="text-[10px] font-semibold uppercase tracking-wider text-stone-400">Pelapor</p>
               <div class="mt-0.5 flex items-center gap-1.5">
-                <span class="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded text-stone-400">
+                <span class="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md border border-stone-200 bg-stone-50 text-stone-500">
                   <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0" />
                   </svg>
@@ -832,7 +832,7 @@ const prioritasClass = (p) => {
         </div>
 
         <!-- Card Footer Actions -->
-        <div class="grid grid-cols-2 gap-3 border-t border-stone-100 bg-stone-50 p-4">
+        <div class="grid grid-cols-2 gap-3 border-t-2 border-stone-200 bg-stone-50/80 p-4">
           <UiButton variant="outline" size="sm" @click.stop="openVerification(report)" class="bg-white">
             Periksa
           </UiButton>

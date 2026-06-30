@@ -3,7 +3,6 @@ import { useRouter } from 'vue-router'
 import { ref, onMounted } from 'vue'
 import bgForest from '../assets/background-forest.png'
 import ContactDarurat from '../components/ContactDarurat.vue'
-import FaqAccordion from '../components/FaqAccordion.vue'
 
 const router = useRouter()
 const emergencyTelHref = 'tel:081374742981'
@@ -320,17 +319,6 @@ onMounted(() => {
           </div>
         </div>
       </div>
-    </section>
-
-    <!-- FAQ SECTION -->
-    <section class="hp-faq hp-animate" style="max-width: 900px; margin: 0 auto 4rem; padding: 0 2rem;">
-      <div class="hp-section-header" style="margin-bottom: 2rem;">
-        <h2 class="hp-section-title">Pertanyaan yang Sering Diajukan (FAQ)</h2>
-        <p class="hp-section-desc">
-          Informasi lengkap seputar mekanisme pelaporan online, proses tindak lanjut, dan jaminan keamanan data.
-        </p>
-      </div>
-      <FaqAccordion />
     </section>
 
     <!-- KONTAK DARURAT -->

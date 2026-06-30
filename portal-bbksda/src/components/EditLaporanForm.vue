@@ -51,11 +51,20 @@ const handleSubmit = () => {
 <template>
   <div class="p-6">
     <div class="flex justify-between items-center mb-4">
-      <h3 class="text-2xl font-bold text-brand-green">Edit Laporan</h3>
+      <h3 class="text-2xl font-bold text-brand-green">Perbaiki Laporan</h3>
       <button @click="emit('close-modal')" class="text-gray-500 hover:text-gray-800 text-3xl leading-none">&times;</button>
     </div>
     <form @submit.prevent="handleSubmit">
       <div class="space-y-4 max-h-[70vh] overflow-y-auto pr-4">
+        <div class="rounded-lg border border-stone-200 bg-stone-50 px-4 py-3">
+          <p class="text-xs font-semibold uppercase text-stone-500">ID Laporan</p>
+          <p class="mt-1 font-mono text-sm font-bold text-brand-green">
+            {{ laporanToEdit.idLaporan || laporanToEdit.id }}
+          </p>
+          <p class="mt-2 text-xs text-stone-500">
+            Kesempatan memperbaiki data hanya dapat digunakan satu kali.
+          </p>
+        </div>
         
         <div>
           <label for="edit-nama" class="block text-sm font-medium text-gray-700">Nama Lengkap Pelapor</label>
